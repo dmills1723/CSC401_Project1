@@ -26,16 +26,20 @@ class PeerThread(threading.Thread):
                 # do the register method, port number
                 # sends back cookie
                 # Peer sends the Leave command
+                return
             elif msg == "Leave":
                 # always check if this peer exists first before processing other requests
                 # sets flag in peer list to false
             # Peer sends the PQuery command
+                return
             elif msg == "PQuery":
                 # sends back a list of active peers that includes
                 # the hostname and RFC server port information.
             # Peer sends the KeepAlive command
+                return
             elif data == "KeepAlive":
                 # upon receipt of this message, the RS resets the TTL value for this peer to 7200.
+                return
             # Else invalid command
             else:
                 #raise error('Error Processing Client request') 
@@ -82,11 +86,11 @@ while True:
     start_time = time.time()
     
     # listen for new connections from peers
-    tcpsock.listen()
+    sock.listen()
     
     # accept the connection from the client
     # retrieve the client socket, ip address, and port number
-    (client_sock, (ip_addr, port)) = tcpsock.accept()
+    (client_sock, (ip_addr, port)) = sock.accept()
     
     # obtain the new peer thread 
     peer_thread = PeerThread(ip_addr, port, client_sock)
