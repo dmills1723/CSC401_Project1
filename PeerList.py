@@ -8,7 +8,7 @@ import math
 '''
 class PeerRecord:
     #TTL_DEFAULT = 7200
-    TTL_DEFAULT = 7
+    TTL_DEFAULT = 5
 
     '''
         Creates a new PeerRecord.
@@ -56,9 +56,8 @@ class PeerRecord:
         if ( self.ttl < time.time() ) :
             ttl = 0
         else :
-            #ttl = math.floor( self.ttl - time.time())
-            #print( "Host: %s \nTTL: %f" %(self.hostname, self.ttl))
-            ttl = self.ttl - time.time()
+            #ttl = self.ttl - time.time()
+            ttl = math.ceil( self.ttl - time.time() )
 
         lastRegistration_datetime = time.strftime( '%Y-%m-%d %H:%M:%S', time.localtime(self.lastRegistrationTime))
 
@@ -90,8 +89,11 @@ class PeerList:
         Initializes an empty linked list "peer_list".
     '''
     def __init__(self, peer_list=None ) :
+        self.peer_list = None
         if peer_list is None :
             self.peer_list = numpy.array( [] )
+        else :
+            self.peer_list = peer_list
         self.nextUID = self.INITIAL_UID 
 
     '''
@@ -122,6 +124,20 @@ class PeerList:
         return cookie
 
     '''
+        Searches the PeerList for the PeerRecord associated with the specified 
+        cookie. If one is found it is returned, otherwise "None" is returned.
+    '''
+    def getPeerByCookie( self, cookie ) :
+        for peer_rec in self.peer_list :
+            if ( peer_rec.cookie == cookie ) :
+                return peer_rec
+        # If no PeerRecord is associated with the specified cookie, None is returned.
+        return None
+ 
+
+
+
+    '''
         If the peer associated with the passed cookie is currently active,
         their TTL is updated. Note that register() is called, but in 
         PeerRecord.register(), if a peer is active, the function does not
@@ -134,45 +150,33 @@ class PeerList:
 
     '''
     def keepAlive( self, cookie ) :
-        peer_rec = getPeerByCookie( cookie )
+        peer_rec = self.getPeerByCookie( cookie )
 
         # If no peer associated with cookie in list (invalid case).
         if ( peer_rec is None ) :
             return 0
 
         # If peer is active (valid case).
-        else if peer_rec.isPeerActive() :
+        elif peer_rec.isPeerActive() :
             peer_rec.register()
             return 1
 
         # If peer is inactive (invalid case).
         else : 
             return 2
-
-    '''
-        Searches the PeerList for the PeerRecord associated with the specified 
-        cookie. If one is found it is returned, otherwise "None" is returned.
-    '''
-    def getPeerByCookie( self, cookie ) :
-        for peer_rec in self.peer_list :
-            if ( peer_rec.cookie == cookie ) :
-                return peer_rec
-        # If no PeerRecord is associated with the specified cookie, None is returned.
-        return None
-        
+       
     '''
         Returns a numpy array of the currently active peers. This array can be 
         "pickled", sent in the body of a PeerList Response message, "unpickled"
         and passed into the PeerList constructor to create a local PeerList.
     '''
     def pQuery( self, cookie ) :
-        self.keepAlive( cookie )
         self.update()
 
         peer_list = numpy.array( [] )
         for peer_rec in self.peer_list :
             if ( peer_rec.isActive ) :
-                numpy.append( peer_list, [peer_rec])
+                peer_list = numpy.append( peer_list, [peer_rec])
         return peer_list
 
     '''
