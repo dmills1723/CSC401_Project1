@@ -55,7 +55,6 @@ Returns the cookie from this response.
 """
 def registerResponseToElements( response ):
     lines = response.splitlines()
-    print( lines )
     cookie = int(lines[1].split(':')[1])
     return cookie
 
