@@ -7,8 +7,8 @@ import math
     the Registration Server.
 '''
 class PeerRecord:
-    #TTL_DEFAULT = 7200
-    TTL_DEFAULT = 5
+    TTL_DEFAULT = 7200
+    #TTL_DEFAULT = 5
 
     '''
         Creates a new PeerRecord.
@@ -16,14 +16,16 @@ class PeerRecord:
         @param cookie (integer) Unique ID for this peer.
         @param port (integer) port this peer's RFC server listens on
     '''
-    def __init__( self, hostname, cookie, port ) :
+    def __init__( self, hostname, cookie, port, time_active = 0, is_active = False, last_reg_time = 0 ) :
         self.hostname = hostname
         self.cookie = cookie
         self.port = port
-        self.timesActive = 0
-        self.isActive = False
-        self.lastRegistrationTime = 0
-        self.register()
+        self.timesActive = time_active
+        self.isActive = is_active
+        self.lastRegistrationTime = last_reg_time
+        if is_active == False and time_active == 0 and last_reg_time == 0:
+            self.register()
+        
     
     '''
         Registers a peer with the Registration Server. If the peer already exists
@@ -59,12 +61,12 @@ class PeerRecord:
             #ttl = self.ttl - time.time()
             ttl = math.ceil( self.ttl - time.time() )
 
-        lastRegistration_datetime = time.strftime( '%Y-%m-%d %H:%M:%S', time.localtime(self.lastRegistrationTime))
+        #lastRegistration_datetime = time.strftime( '%Y-%m-%d %H:%M:%S', time.localtime(self.lastRegistrationTime))
 
         return ("Hostname:%s\nCookie:%s\nPort:%s\nTTL:%f\nActive:%s\n"
-               "LastRegistered:%s\nTimesActiveInMonth:%d\n"
+               "LastRegistered:%f\nTimesActiveInMonth:%d\n"
                 %( self.hostname, self.cookie, self.port, ttl, self.isActive, 
-                lastRegistration_datetime, self.timesActive ))
+                self.lastRegistrationTime, self.timesActive ))
 
     '''
         Updates the "isActive" instance variable.
@@ -107,7 +109,6 @@ class PeerList:
         3) The specified cookie is "-1" (new peer). A cookie is generated,
            the peer is added to the list, made active, and the cookie
            is returned.
-
         @param hostname (string) identifying peer like "somehost.csc.ncsu.edu"
         @param port (integer) for the port the peer's RFC server is listening.
     '''
@@ -144,10 +145,8 @@ class PeerList:
         re-register them (incrementing # times registered, updating last registration
         time, etc.), it only updates the TTL. For valid keepalive requests (i.e. 
         currently active peers) True is returned.
-
         If the peer associated with cookie is inactive, the keepalive request is
         considered invalid and False is returned.
-
     '''
     def keepAlive( self, cookie ) :
         peer_rec = self.getPeerByCookie( cookie )
@@ -171,6 +170,10 @@ class PeerList:
         and passed into the PeerList constructor to create a local PeerList.
     '''
     def pQuery( self, cookie ) :
+        peer_rec = self.getPeerByCookie( cookie )
+        if peer_rec == None:
+            return None
+    
         self.update()
 
         peer_list = numpy.array( [] )
@@ -191,7 +194,10 @@ class PeerList:
     '''
     def leave( self, cookie ) :
         peer_rec = self.getPeerByCookie( cookie )
+        if peer_rec == None:
+            return False
         peer_rec.leave()
+        return True
 
     '''
         Returns a string representation of the PeerList, for printing 
@@ -203,4 +209,3 @@ class PeerList:
         for peer_rec in self.peer_list :
             string_list.append( str( peer_rec) )
         return '\n'.join( string_list )
-
