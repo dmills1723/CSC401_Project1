@@ -120,7 +120,7 @@ class PeerList:
             peer_rec = PeerRecord( hostname, cookie, port )
             self.peer_list = numpy.append( self.peer_list, [peer_rec] )
         else : 
-            peer_rec = getPeerByCookie( cookie )
+            peer_rec = self.getPeerByCookie(cookie, True)
             peer_rec.register()
         return cookie
 
@@ -128,14 +128,14 @@ class PeerList:
         Searches the PeerList for the PeerRecord associated with the specified 
         cookie. If one is found it is returned, otherwise "None" is returned.
     '''
-    def getPeerByCookie( self, cookie ) :
+    def getPeerByCookie( self, cookie, is_registering=False ) :
         for peer_rec in self.peer_list :
-            if ( peer_rec.cookie == cookie ) :
+            if( is_registering and peer_rec.cookie == cookie) :
+                return peer_rec
+            if ( peer_rec.cookie == cookie and peer_rec.isActive ) :
                 return peer_rec
         # If no PeerRecord is associated with the specified cookie, None is returned.
         return None
- 
-
 
 
     '''
@@ -209,3 +209,4 @@ class PeerList:
         for peer_rec in self.peer_list :
             string_list.append( str( peer_rec) )
         return '\n'.join( string_list )
+    
