@@ -23,7 +23,6 @@ def Main():
         cmd = input("Enter Command: ")
         print()
         
-        #TODO: Currently an issue with a user registering twice
         if cmd == "Register":
 
             s = socket.socket(socket.AF_INET,socket.SOCK_STREAM) 
@@ -60,8 +59,8 @@ def Main():
                 response_bytes = s.recv(2048) 
 
                 response += str(response_bytes.decode('ascii'))
-                
-                if response[-4] = "END\n":
+
+                if response[-4:] == "END\n":
                     break
         
             print(response)
@@ -92,8 +91,8 @@ def Main():
         
             status = ProtocolTranslator.leaveResponseToElements( response )
             
-            if status == True:
-                cookie = -1
+            #if status == True:
+                #cookie = -1
             
             s.close()
 
@@ -121,7 +120,8 @@ def Main():
         elif cmd == "Exit":
             break
         else:
-            print("Invalid Command")
+            print("Invalid Command\n")
 
 if __name__ == '__main__': 
-	Main() 
+	Main()
+    
