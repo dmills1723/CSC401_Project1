@@ -107,19 +107,25 @@ class PeerThread(threading.Thread):
                 
                 # attempts to find the matching peer in this peer list based on the cookie
                 # returns the peerlist of active peers or None if the peer hasn't registered yet
-                p_list = peer_list.pQuery( cookie )
+                p_list, status = peer_list.pQuery( cookie )
                                 
                 # releases lock on the peer list after modifying
                 lock.release()
                 
-                can_query = False
+                #can_query = False
                 p_list_str = ''
-                if p_list is not None:
-                    can_query = True
+                #if p_list is not None:
+                 #   can_query = True
+                 #   p_list = PeerList(p_list)
+                 #   p_list_str = str(p_list)
+
+
+                if status == 1:
+
                     p_list = PeerList(p_list)
                     p_list_str = str(p_list)
      
-                response = ProtocolTranslator.pqueryResponseToProtocol( can_query, p_list_str )
+                response = ProtocolTranslator.pqueryResponseToProtocol(status, p_list_str )
                 
                 print(response)
      

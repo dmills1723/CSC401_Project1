@@ -83,12 +83,14 @@ Takes in a boolean value of whether this Peer's pQuery was successful and a Stri
 representation of the the active Peer List users.
 Returns the pQuery response protocol string with the corresponding status code.
 """
-def pqueryResponseToProtocol( can_query, p_list  ):
+def pqueryResponseToProtocol(status, p_list):
     response = ''
-    if can_query:
+    if status == 1:
         response += '200 OK\n'
-    else:
+    elif status == 0:
         response += '400 BAD REQUEST\n'
+    elif status == 2:
+        response += '300 NO ACTIVE PEERS\n'
     response += "Data:\n"
     response += p_list
     response += "END\n"
@@ -101,7 +103,7 @@ a BAD REQUEST.
 """
 def pqueryResponseToElements( response ):
     lines = response.splitlines()
-    if lines[0] == '400 BAD REQUEST':
+    if lines[0] == '400 BAD REQUEST' or lines[0] == '300 NO ACTIVE PEERS':
         return False, None
     else:
         p_list = PeerList()
