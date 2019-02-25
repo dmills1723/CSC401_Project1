@@ -174,7 +174,11 @@ class PeerList:
         peer_rec = self.getPeerByCookie( cookie )
         if peer_rec is None:
             return None, 0
-    
+
+        # Updates TTL field to 7200
+        peer_rec.register()
+
+        # Marks all of the peers that are inactive due to TTL
         self.update()
 
         peer_list = numpy.array( [] )
