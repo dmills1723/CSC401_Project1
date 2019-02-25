@@ -23,7 +23,8 @@ class PeerRecord:
         self.timesActive = time_active
         self.isActive = is_active
         self.lastRegistrationTime = last_reg_time
-        if is_active == False and time_active == 0 and last_reg_time == 0:
+        self.ttl = 0
+        if is_active is False and time_active == 0 and last_reg_time == 0:
             self.register()
         
     
@@ -35,7 +36,7 @@ class PeerRecord:
         self.ttl = self.TTL_DEFAULT + time.time()
         # Registering while already active is ignored and 
         # treated as a KeepAlive call.
-        if ( self.isActive == False ) :
+        if self.isActive is False :
             self.timesActive += 1
             self.lastRegistrationTime = time.time()
         self.isActive = True
@@ -171,7 +172,7 @@ class PeerList:
     '''
     def pQuery( self, cookie ) :
         peer_rec = self.getPeerByCookie( cookie )
-        if peer_rec == None:
+        if peer_rec is None:
             return None
     
         self.update()
@@ -194,7 +195,7 @@ class PeerList:
     '''
     def leave( self, cookie ) :
         peer_rec = self.getPeerByCookie( cookie )
-        if peer_rec == None:
+        if peer_rec is None:
             return False
         peer_rec.leave()
         return True

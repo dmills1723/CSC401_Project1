@@ -86,9 +86,9 @@ Returns the pQuery response protocol string with the corresponding status code.
 def pqueryResponseToProtocol( can_query, p_list  ):
     response = ''
     if can_query:
-        response = '200 OK\n'
+        response += '200 OK\n'
     else:
-        response = '400 BAD REQUEST\n'
+        response += '400 BAD REQUEST\n'
     response += "Data:\n"
     response += p_list
     response += "END\n"
@@ -101,7 +101,7 @@ a BAD REQUEST.
 """
 def pqueryResponseToElements( response ):
     lines = response.splitlines()
-    if lines[0] == '400 BADREQUEST':
+    if lines[0] == '400 BAD REQUEST':
         return False, None
     else:
         p_list = PeerList()
@@ -161,9 +161,9 @@ Returns the leave response protocol string with the corresponding status code.
 def leaveResponseToProtocol( can_leave ):
     response = ''
     if can_leave:
-        response = '200 OK\n'
+        response += '200 OK\n'
     else:
-        response = '400 BAD REQUEST\n'
+        response += '400 BAD REQUEST\n'
     return response
 
 """
@@ -204,9 +204,9 @@ Returns the keepAlive response protocol string with the corresponding status cod
 def keepAliveResponseToProtocol( can_keep_alive ):
     response = ''
     if can_keep_alive:
-        response = '200 OK\n'
+        response += '200 OK\n'
     else:
-        response = '400 BAD REQUEST\n'
+        response += '400 BAD REQUEST\n'
     return response
     
 """
@@ -220,4 +220,52 @@ def keepAliveResponseToElements( response ):
     else:
         return False
 
+def rfcqueryQueryToProtocol( host ):
+    message = "RFCQuery\n"
+    message += "Host:" + host + "\n"
+    return message
 
+def rfcqueryQueryToElements( query ):
+    lines = query.splitlines()
+    host = lines[1].split(':')[1]
+    return host
+
+def rfcQueryResponseToProtocol( has_rfc_idx, rfc_idx_str ):
+    response = ''
+    if has_rfc_idx:
+        response += '200 OK\n'
+    else:
+        response += '400 BAD REQUEST\n'
+    response += "Data:\n"
+    response += rfc_idx_str
+    response += "END\n"
+    return response
+
+def rfcQueryResponseToElements( response ):
+    #TODO
+    return
+
+def getRfcQueryToProtocol( rfc ):
+    message = "GetRFC\n"
+    message += "RFC:" + str(rfc) + "\n"
+    return message
+
+def getRfcQueryToElements( query ):
+    lines = query.splitlines()
+    rfc_num = int(lines[1].split(':')[1])
+    return rfc_num
+
+def getRfcResponseToProtocol( has_file, rfc_file_text ):
+    response = ''
+    if has_file:
+        response += '200 OK\n'
+    else:
+        response += '400 BAD REQUEST\n'
+    response += "Data:\n"
+    response += rfc_file_text
+    response += "END\n"
+    return response
+
+def getRfcResponseToElements( response ):
+    #TODO
+    return
