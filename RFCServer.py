@@ -14,6 +14,8 @@
 
 import socket
 import threading
+import time
+import signal, os
 
 '''
     Class for threads spawned by the server to handle communication with
@@ -44,7 +46,44 @@ class PeerThread(threading.Thread) :
         elif method == "GetRFC" :
             print ( "TODO" )
 
+'''
+'''
 class RFCServer() :
+    ''' 
+        Initializes the RFCServer:
+            - Creates and binds a socket to listen for incoming peers.
+            - Sends the client the port chosen to listen on.
+            - Instantiates instance variables:
+                rfc_index: Initial RFCIndex passed from ClientPeer.
+                serv_sock: Socket the server listens for peers on.
+                serv_pipe: Pipe for communication with ClientPeer.
+                serv_port: Port number the server is listening on.
+        Then, starts the main server function "runServer()". The server will
+        remain in this function until PeerClient sends a SIGTERM from PeerClient.
+        
+    '''
+    def __init__( self, serv_pipe, rfc_index ) :
+        # Initializes the RFC index.
+        self.rfc_index = rfc_index
+
+        # Creates socket to listen for incoming peers on.
+        self.serv_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+        # Gets this computer's IP address which the socket will listen on.
+        ip_addr = self.getIPAddress() 
+
+        # Binds socket to a random, available port. 
+        self.serv_sock.bind( (ip_addr, 0) )
+
+        # Gets the port number "serv_sock" is bound to ...
+        self.serv_port = self.serv_sock.getsockname()[1]
+
+        # ... and sends it back to the Client.
+        self.serv_pipe = serv_pipe
+        self.serv_pipe.send( self.serv_port )
+    
+        print( "RFCServer: %s\n" %os.getpid() )
+
     '''
         Returns this computer's IP address. 
     '''
@@ -59,25 +98,20 @@ class RFCServer() :
         sock.close()
         return ip_addr
 
-    ''' 
-        Initializes the RFCServer:
-            - Creates and binds a socket to listen for incoming peers.
-            - Sends the client the port chosen to listen on.
-    '''
-    def __init__( self, server_pipe, rfc_index ) :
-        # Creates socket to listen for incoming peers on.
-        self.serv_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-        # Gets this computer's IP address which the socket will listen on.
-        ip_addr = self.getIPAddress() 
-
-        # Binds socket to a random, available port. 
-        self.serv_sock.bind( (ip_addr, 0) )
-
-        # Gets the port number bound to and sends it back to the client.
-        self.serv_port = self.serv_sock.getsockname()[1]
-        server_pipe.send( self.serv_port )
-
     def killServer( self ) :
         self.serv_sock.close()
-        
+
+    def run( self ) :
+        i = 0
+        while True :
+            try :
+                time.sleep(2)
+                i += 2
+                print( "Running : %d seconds\n" %i )
+            except KeyboardInterrupt :
+                print( "interrupt caught\nsleeping for 3 seconds....\n" )
+                time.sleep( 3 )
+                print( "exiting RFCServer\n" )
+                break
+        print( "broke from while loop\n" )
+            
