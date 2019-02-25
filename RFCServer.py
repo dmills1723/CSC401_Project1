@@ -16,6 +16,7 @@ import socket
 import threading
 import time
 import signal, os
+import ProtocolTranslator
 
 '''
     Class for threads spawned by the server to handle communication with
@@ -23,14 +24,20 @@ import signal, os
 
 '''
 class PeerThread(threading.Thread) : 
-    def __init__( self, ip_addr, port, socket ):
+    def __init__( self, ip_addr, port, socket, rfc_index ):
         threading.Thread.__init__(self)
         self.ip_addr = ip_addr
         self.port = port
         self.socket = socket
+        self.rfc_index = rfc_index
+
+    def hasLocalRFC( self, rfc_num ) :
+        rfc_path = os.path.join(os.path.curdir, "RFCs", "rfc%s.txt" %rfc_num )
+        print( rfc_path )
+        return os.path.isfile( rfc_path )
 
     def run( self ) :
-        request_bytes = self.socket.recv( 2048 )
+        request_bytes = self.socket.recv( 1024 )
 
         # convert the request in bytes to string
         request = str( request_bytes.decode('ascii') )
@@ -41,11 +48,35 @@ class PeerThread(threading.Thread) :
         method = request.splitlines()[0]
 
         if method == "RFCQuery" :
-            print ( "TODO" )
-            
-        elif method == "GetRFC" :
-            print ( "TODO" )
+            nonEmptyIndex = ( self.rfc_index.size() > 0 )
 
+            # sends back a response message with the cookie
+            response = ProtocolTranslator.rfcQueryResponseToProtocol( nonEmptyIndex, "FAKE INDEX. TODO" )
+
+            #response = ProtocolTranslator.rfcQueryResponseToProtocol( nonEmptyIndex, str( self.rfc_index ))
+        elif method == "GetRFC" :
+            rfc_num = ProtocolTranslator.getRfcQueryToElements( request )
+
+            # Checks if local file for RFC exists. Passes this to ProtocolTranslator below.
+            print( rfc_num )
+            has_file = self.hasLocalRFC( rfc_num )
+            print( "has file: %s\n" %has_file )
+            
+            response = ProtocolTranslator.rfcQueryResponseToProtocol( has_file, "" )
+
+        else :
+            response = ProtocolTranslator.genericBadRequestResponseToProtocol()
+
+        print(response)
+             
+        # translates the response protocol into bytes
+        response_bytes = response.encode('ascii')
+             
+        # sends the response to the peer client
+        self.socket.send( response_bytes )
+        
+
+        
 '''
 '''
 class RFCServer() :
@@ -98,20 +129,32 @@ class RFCServer() :
         sock.close()
         return ip_addr
 
-    def killServer( self ) :
+    def cleanup( self, worker_threads ) :
         self.serv_sock.close()
+        for thread in worker_threads :
+            thread.join()
+        print( "finished cleanup. exiting...." )
 
     def run( self ) :
-        i = 0
+        worker_threads = []
+        print( self.serv_port )
+        
         while True :
             try :
-                time.sleep(2)
-                i += 2
-                print( "Running : %d seconds\n" %i )
+                self.serv_sock.listen()
+                (client_sock, (ip_addr, port)) = self.serv_sock.accept()
+
+                # Check if an updated RFC index has been sent from the client.
+                # Update the RFC index if so.
+                if ( self.serv_pipe.poll() ) :
+                    self.rfc_index = serf.serv_pipe.recv()
+
+                peer_thread = PeerThread( ip_addr, port, client_sock, self.rfc_index )
+                peer_thread.start()
+
+                worker_threads.append( peer_thread )
+
             except KeyboardInterrupt :
-                print( "interrupt caught\nsleeping for 3 seconds....\n" )
-                time.sleep( 3 )
-                print( "exiting RFCServer\n" )
+                self.cleanup( worker_threads )
                 break
-        print( "broke from while loop\n" )
             
