@@ -271,3 +271,12 @@ def getRfcResponseToProtocol( has_file, rfc_file_text ):
 def getRfcResponseToElements( response ):
     #TODO
     return
+
+# Return for a request that doesn't match an expected request.
+# Ideally, this shouldn't be called.
+def genericBadRequestResponseToProtocol() :
+        response = ''
+        response += '400 BAD REQUEST\n'
+        response += "Data:\n"
+        response += "END\n"
+        return response
