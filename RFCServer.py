@@ -107,11 +107,6 @@ class RFCServer() :
             try :
                 time.sleep(2)
                 i += 2
-                print( "Running : %d seconds\n" %i )
             except KeyboardInterrupt :
-                print( "interrupt caught\nsleeping for 3 seconds....\n" )
-                time.sleep( 3 )
-                print( "exiting RFCServer\n" )
+                time.sleep(3)
                 break
-        print( "broke from while loop\n" )
-            

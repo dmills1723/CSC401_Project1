@@ -35,12 +35,14 @@ class PeerThread(threading.Thread):
         try:
             # bytes sent from the peer
             request_bytes = self.socket.recv(2048)
+
+            print(request_bytes)
             
             # convert the request in bytes to string
             request = str( request_bytes.decode('ascii') )
-            
+
             print(request)
-            
+
             # obtains the method of this protocol
             method = request.splitlines()[0]
     
@@ -48,21 +50,21 @@ class PeerThread(threading.Thread):
             if method == "Register":
                 # obtains the host, port, and cookie from the register request protocol
                 host, port, c = ProtocolTranslator.registerQueryToElements( request )
-                
+
                 # acquire lock on the peer list before modifying
                 lock.acquire()
                 
                 # registers this host in the peer list and obtains the cookie
                 cookie = peer_list.register( host, port, c )
-                
+
                 # release lock on the peer list after modifying
                 lock.release()
                 
                 # sends back a response message with the cookie
                 response = ProtocolTranslator.registerResponseToProtocol( cookie )
-                
+
                 print(response)
-                
+
                 # translates the response protocol into bytes
                 response_bytes = response.encode('ascii')
                 
@@ -98,7 +100,7 @@ class PeerThread(threading.Thread):
 
             # Peer sends the PQuery request
             elif method == "PQuery":
-            
+
                 # obtains the cookie for this peer from the request
                 cookie = ProtocolTranslator.pqueryQueryToElements( request )
                 
