@@ -232,6 +232,11 @@ def rfcqueryQueryToElements( query ):
     host = lines[1].split(':')[1]
     return host
 
+"""
+Creates the RFCQuery response protocol by passing in the status
+(if the RFC Index exists on this peer) and the string representation
+of this RFC Index.
+"""
 def rfcQueryResponseToProtocol( has_rfc_idx, rfc_idx_str ):
     response = ''
     if has_rfc_idx:
@@ -285,16 +290,29 @@ def rfcQueryResponseToElements( response ):
 
         return True, peer_rfc_idx
 
+"""
+Creates a query for the GetRFC protocol based on the
+passed in RFC number parameter.
+"""
 def getRfcQueryToProtocol( rfc ):
     message = "GetRFC\n"
     message += "RFC:" + str(rfc) + "\n"
     return message
 
+"""
+Obtains the RFC number from the GetRFC protocol query.
+"""
 def getRfcQueryToElements( query ):
     lines = query.splitlines()
     rfc_num = int(lines[1].split(':')[1])
     return rfc_num
 
+"""
+Creates a response protocol for the GetRFC request.
+Returns the status (if the RFC file was found)
+and the associated RFC file as a string representation
+in this protocol's DATA section.
+"""
 def getRfcResponseToProtocol( has_file, rfc_file_text ):
     response = ''
     if has_file:
@@ -306,15 +324,18 @@ def getRfcResponseToProtocol( has_file, rfc_file_text ):
     response += "END\n"
     return response
 
+"""
+Obtains the status code and the string representation
+of the RFC file from this GetRFC response protocol.
+"""
 def getRfcResponseToElements( response ):
     lines = response.splitlines()
+    rfc_txt = ''
     if lines[0] == '400 BAD REQUEST':
-        return False, None
+        return False, rfc_txt
     else:
-        # Might need to be more detailed than this but right not
-        # just returning the rfc file as one string
-        rfc_txt = lines[2]
-
+        length = len(lines)
+        rfc_txt = "\n".join(lines[2:length-1])
         return True, rfc_txt
 
 # Return for a request that doesn't match an expected request.

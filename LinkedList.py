@@ -49,20 +49,20 @@ class Node:
         # self.ttl stores the time a PeerRecord will no longer be active,
         # rather than the actual TTL. The actuall TTL is calculated here
         # for the string representation.
-        if ( self.ttl < time.time() ) :
-            ttl = 0
-        else :
+        #if ( self.ttl < time.time() ) :
+         #   ttl = 0
+        #else :
             #ttl = self.ttl - time.time()
-            ttl = math.ceil( self.ttl - time.time() )
+        #   ttl = math.ceil( self.ttl - time.time() )
 
         #lastRegistration_datetime = time.strftime( '%Y-%m-%d %H:%M:%S', time.localtime(self.lastRegistrationTime))
 
         #return ("RFC:%d\nTitle:%s\nHostname:%s\nTTL:%f"
-         #       %( self.rfc_num, self.title, self.hostname, ttl, self.ttl ) )
+        #       %( self.rfc_num, self.title, self.hostname, ttl, self.ttl ) )
         str_rfc = "RFC:" + str(self.rfc_num) + "\n"
         str_rfc += "Title:" + self.title + "\n"
         str_rfc += "Hostname:" + self.hostname + "\n"
-        str_rfc += "TTL:" + str(ttl) + "\n"
+        str_rfc += "TTL:" + str(self.ttl) + "\n"
         return str_rfc
 
 
