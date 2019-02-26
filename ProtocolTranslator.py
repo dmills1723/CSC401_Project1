@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from PeerList import PeerList
 from PeerList import PeerRecord
-import time
+from LinkedList import LinkedList
 import numpy
 
 """
@@ -83,12 +83,14 @@ Takes in a boolean value of whether this Peer's pQuery was successful and a Stri
 representation of the the active Peer List users.
 Returns the pQuery response protocol string with the corresponding status code.
 """
-def pqueryResponseToProtocol( can_query, p_list  ):
+def pqueryResponseToProtocol(status, p_list):
     response = ''
-    if can_query:
+    if status == 1:
         response += '200 OK\n'
-    else:
+    elif status == 0:
         response += '400 BAD REQUEST\n'
+    elif status == 2:
+        response += '300 NO ACTIVE PEERS\n'
     response += "Data:\n"
     response += p_list
     response += "END\n"
@@ -101,7 +103,7 @@ a BAD REQUEST.
 """
 def pqueryResponseToElements( response ):
     lines = response.splitlines()
-    if lines[0] == '400 BAD REQUEST':
+    if lines[0] == '400 BAD REQUEST' or lines[0] == '300 NO ACTIVE PEERS':
         return False, None
     else:
         p_list = PeerList()
@@ -241,9 +243,47 @@ def rfcQueryResponseToProtocol( has_rfc_idx, rfc_idx_str ):
     response += "END\n"
     return response
 
+"""
+
+Returns the RFC Index from the peer and boolean value of whether it exists.
+NOTE: Only returns this peer's RFC Index. Inside ClientPeer.py - will need to merge with
+own rfc_index, create new a linked list from the returned node, and then remove duplicates.
+
+Example:
+merged_head = rfc_index.merge_sort(rfc_index.head, peer_rfc_index.head)
+merged_rfc_index = LinkedList(merged_head)
+merged_rfc_index.remove_duplicates()
+
+"""
 def rfcQueryResponseToElements( response ):
-    #TODO
-    return
+    lines = response.splitlines()
+    if lines[0] == '400 BAD REQUEST':
+        return False, None
+    else:
+        peer_rfc_idx = LinkedList()
+        current_idx = 2
+
+        size = len(lines)
+        while current_idx + 3 < size:
+            rfc_num = int(lines[current_idx].split(':')[1])
+
+            title_list = lines[current_idx + 1].split(':')
+            length = len(title_list)
+            idx = 1
+            title = ''
+            while( idx < length):
+                title += title_list[idx]
+                if(idx +1 < length):
+                    title += ':'
+                idx += 1
+            hostname = lines[current_idx + 2].split(':')[1]
+            ttl = float(lines[current_idx + 3].split(':')[1])
+
+            peer_rfc_idx.add_sort(rfc_num, title, hostname, ttl)
+
+            current_idx += 5
+
+        return True, peer_rfc_idx
 
 def getRfcQueryToProtocol( rfc ):
     message = "GetRFC\n"
@@ -267,5 +307,21 @@ def getRfcResponseToProtocol( has_file, rfc_file_text ):
     return response
 
 def getRfcResponseToElements( response ):
-    #TODO
-    return
+    lines = response.splitlines()
+    if lines[0] == '400 BAD REQUEST':
+        return False, None
+    else:
+        # Might need to be more detailed than this but right not
+        # just returning the rfc file as one string
+        rfc_txt = lines[2]
+
+        return True, rfc_txt
+
+# Return for a request that doesn't match an expected request.
+# Ideally, this shouldn't be called.
+def genericBadRequestResponseToProtocol() :
+        response = ''
+        response += '400 BAD REQUEST\n'
+        response += "Data:\n"
+        response += "END\n"
+        return response

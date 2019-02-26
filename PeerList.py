@@ -173,15 +173,23 @@ class PeerList:
     def pQuery( self, cookie ) :
         peer_rec = self.getPeerByCookie( cookie )
         if peer_rec is None:
-            return None
-    
+            return None, 0
+
+        # Updates TTL field to 7200
+        peer_rec.register()
+
+        # Marks all of the peers that are inactive due to TTL
         self.update()
 
         peer_list = numpy.array( [] )
         for peer_rec in self.peer_list :
-            if ( peer_rec.isActive ) :
+            if ( peer_rec.isActive and peer_rec.cookie != cookie ) :
                 peer_list = numpy.append( peer_list, [peer_rec])
-        return peer_list
+
+        if( len(peer_list) == 0):
+            return None, 2
+
+        return peer_list, 1
 
     '''
         Updates the isActive field of all peer records in the list. 

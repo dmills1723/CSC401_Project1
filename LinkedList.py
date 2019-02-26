@@ -1,3 +1,6 @@
+import time
+import math
+
 class Node:
     # Initial
     def __init__(self, rfc_num, title, hostname, ttl=7200):
@@ -42,11 +45,31 @@ class Node:
         else:
             return False
 
+    def __str__( self ) :
+        # self.ttl stores the time a PeerRecord will no longer be active,
+        # rather than the actual TTL. The actuall TTL is calculated here
+        # for the string representation.
+        if ( self.ttl < time.time() ) :
+            ttl = 0
+        else :
+            #ttl = self.ttl - time.time()
+            ttl = math.ceil( self.ttl - time.time() )
+
+        #lastRegistration_datetime = time.strftime( '%Y-%m-%d %H:%M:%S', time.localtime(self.lastRegistrationTime))
+
+        #return ("RFC:%d\nTitle:%s\nHostname:%s\nTTL:%f"
+         #       %( self.rfc_num, self.title, self.hostname, ttl, self.ttl ) )
+        str_rfc = "RFC:" + str(self.rfc_num) + "\n"
+        str_rfc += "Title:" + self.title + "\n"
+        str_rfc += "Hostname:" + self.hostname + "\n"
+        str_rfc += "TTL:" + str(ttl) + "\n"
+        return str_rfc
+
 
 class LinkedList:
     # Initial
-    def __init__(self):
-        self.head = None
+    def __init__(self, head=None):
+        self.head = head
 
     # Print linked list in order
     def list_print(self):
@@ -93,22 +116,22 @@ class LinkedList:
         last = self.head
 
         while last.next:
-            last = last.nextval
+            last = last.next
 
-        last.nextval = new
+        last.next = new
 
     # Remove node from linked list
-    def remove_node(self, rfc_num):
+    def remove_node(self, rfc_num, hostname):
         head = self.head
-
+        #prev = None
         if head is not None:
-            if head.rfc_num == rfc_num:
+            if head.rfc_num == rfc_num and head.hostname == hostname:
                 self.head = head.next
                 head = None
                 return
 
         while head is not None:
-            if head.rfc_num == rfc_num:
+            if head.rfc_num == rfc_num and head.hostname == hostname:
                 break # exit loop
             prev = head
             head = head.next
@@ -143,26 +166,39 @@ class LinkedList:
     def remove_duplicates(self):
         current = self.head
         while current:
-            while current.next and current.rfc_num is current.next.rfc_num:
+            if current.next and ( current.rfc_num == current.next.rfc_num ) and ( current.hostname == current.next.hostname ):
                 current.next = current.next.next
 
             current = current.next
 
 
+
+    '''
+        Returns a string representation of the PeerList, for printing 
+        and debugging.
+    '''
+    def __str__( self ) :
+        string_list = []
+        current = self.head
+        while current:
+            string_list.append( str( current) )
+            current = current.next
+        return '\n'.join( string_list )
+
     '''
         Merge sorted linked lists
     '''
     def merge_sort(self, list_1_head, list_2_head) :
-        if list_1_head is None:
-            return list_2_head
-        if list_2_head is None:
-            return list_1_head
+            if list_1_head is None:
+                return list_2_head
+            if list_2_head is None:
+                return list_1_head
 
-        if list_2_head.rfc_num >= list_1_head.rfc_num:
-            temp = list_1_head
-            temp.next = self.merge_sort(list_1_head.next, list_2_head)
-        else:
-            temp = list_2_head
-            temp.next = self.merge_sort(list_1_head, list_2_head.next)
+            if list_2_head.rfc_num >= list_1_head.rfc_num:
+                temp = list_1_head
+                temp.next = self.merge_sort(list_1_head.next, list_2_head)
+            else:
+                temp = list_2_head
+                temp.next = self.merge_sort(list_1_head, list_2_head.next)
 
-        return temp
+            return temp
