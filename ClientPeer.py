@@ -8,6 +8,7 @@ import time
 import os
 import signal
 import socket
+import numpy as np
 
 '''
    Waits for the RFCServer to gracefully terminate, then exits.
@@ -105,6 +106,7 @@ def main_menu():
             print(response)
 
             success, p_list = ProtocolTranslator.pqueryResponseToElements(response)
+            print( "success: %s" %success )
 
             global Peer_List
             if success:
@@ -135,7 +137,10 @@ def main_menu():
             if record is not None and Peer_List:
                 # Client already owns the RFC file
                 # (Found in RFC Index and we already own the RFC document)
-                if record.hostname == HOST:
+                rfc_path = os.path.join(os.path.curdir, "RFCs", "rfc%s.txt" % rfc)
+                hasLocalFile = os.path.isfile(rfc_path)
+
+                if hasLocalFile :
                     print("RFC record is already available on this system!\n")
                     continue
 
@@ -147,7 +152,7 @@ def main_menu():
                 # (RFC document found in RFC Index, used hostname and Peer List to contact peer)
                 else:
                     found = False
-                    for peer in Peer_List.peer_list:
+                    for peer in np.flip(Peer_List.peer_list):
                         if record.hostname == peer.hostname:
                             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                             sock.connect((peer.hostname, peer.port))
@@ -177,7 +182,7 @@ def main_menu():
             elif record is None and Peer_List:
                 flag = 0
                 # Contact all peers in Peer List until RFC document identified in merged RFC Index
-                for peer in Peer_List.peer_list:
+                for peer in np.flip(Peer_List.peer_list):
                     print('for loop\n')
                     print(peer.hostname)
                     print(peer.port)
@@ -207,8 +212,10 @@ def main_menu():
                         # Peer has non-empty RFC Index
                         if rfc_idx is not None:
                             print('RFC index not none\n')
-                            RFC_index.merge_sort(RFC_index.head, rfc_idx.head)
+                            RFC_index_head = RFC_index.merge_sort(RFC_index.head, rfc_idx.head)
+                            RFC_index = LinkedList( RFC_index_head )
                             print('List merged\n')
+                            print( RFC_index )
 
                             # Search RFC Index for RFC
                             rfc_record = RFC_index.search(rfc)
@@ -227,13 +234,11 @@ def main_menu():
                                 print(response)
 
                                 found, rfc_file = ProtocolTranslator.getRfcResponseToElements(response)
-                                rfc_file_lines = PeerUtils.getRFCFileText(rfc_file)
-                                PeerUtils.writeRFCFile(rfc_file_lines, rfc_file)
-                                print(rfc_file_lines)
+                                PeerUtils.writeRFCFile(rfc_file, rfc)
                                 sock.close()
 
                                 # Peer contacted and RFC document received
-                                if found is True and rfc_file_lines is not None:
+                                if found is True and rfc_file is not None:
                                     print("We have found a peer and received the RFC document :)\n")
                                     flag = 1
 
@@ -300,7 +305,12 @@ def main_menu():
 
             sock.close()
 
-        elif command == "Exit":
+        elif command == "peerlist" :
+            print(Peer_List)
+        elif command == "rfcindex" :
+            print(RFC_index)
+            
+        elif command == "Exit" :
 
             break
 
