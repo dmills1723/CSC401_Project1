@@ -26,17 +26,19 @@ class PeerThread(threading.Thread):
         Initializes a PeerThread: 
             - Calls Thread's init method.
             - Instantiates instance variables:
-                ip_addr   :  Peer's IP address. 
-                socket    :  Socket opened for handling a single peer.
-                port      :  Peer's port bound to socket.
-                rfc_index : Recently updated copy of the rfc_index.
+                ip_addr    : Peer's IP address. 
+                socket     : Socket opened for handling a single peer.
+                port       : Peer's port bound to socket.
+                rfc_index  : Recently updated copy of the rfc_index.
+                index_lock : Mutex for accessing the rfc_index.
     '''
-    def __init__(self, ip_addr, port, socket, rfc_index):
+    def __init__(self, ip_addr, port, socket, rfc_index, rfc_index_lock ):
         threading.Thread.__init__(self)
         self.ip_addr = ip_addr
         self.port = port
         self.socket = socket
         self.rfc_index = rfc_index
+        self.index_lock = rfc_index_lock
 
     '''
         Returns whether this host has an RFC file locally.
@@ -56,16 +58,25 @@ class PeerThread(threading.Thread):
         # convert the request in bytes to string
         request = str(request_bytes.decode('ascii'))
 
-
         # obtains the method of this protocol
         method = request.splitlines()[0]
 
+        # Returns the current RFC index.
         if method == "RFCQuery":
+            # Acquire lock on rfc_index
+            self.index_lock.acquire()
+
+            # Check that the RFC index is non-empty. 
+            # This is passed to ProtocolTranslator.rfcQueryResponseToProtocol
             nonEmptyIndex = (self.rfc_index.size() > 0)
 
             # sends back a response message with the cookie
             response = PT.rfcQueryResponseToProtocol(nonEmptyIndex, str( self.rfc_index ))
 
+            # Releases mutex lock on the RFC index.
+            self.index_lock.release()
+
+        # Returns the specified RFC, if it exists locally.
         elif method == "GetRFC":
             rfc_num = PT.getRfcQueryToElements(request)
 
@@ -74,6 +85,8 @@ class PeerThread(threading.Thread):
 
             response = PT.rfcQueryResponseToProtocol( has_file, PU.getRFCFileText( rfc_num ) )
 
+        # Returns a "BAD REQUEST" response, since the request didn't 
+        # match the expected "GetRFC" or "RFCQuery".
         else:
             response = PT.genericBadRequestResponseToProtocol()
 
@@ -136,7 +149,8 @@ class RFCServer():
         ip_addr = sock.getsockname()[0]
 
         sock.close()
-        return ip_addr
+        #return ip_addr
+        return '127.0.0.1'
 
     '''
         Joins threads opened in run() and closes the server's socket.
@@ -157,6 +171,8 @@ class RFCServer():
         worker_threads = []
         print( "RFCServer port: %d" %self.serv_port )
 
+        self.rfc_index_lock = threading.Lock()
+
         # Loops infinitely, accepting connections and passing them
         # off to PeerThreads. A SIGINT will break out of this loop.
         while True:
@@ -166,10 +182,11 @@ class RFCServer():
 
                 # Check if an updated RFC index has been sent from the client.
                 # Update the RFC index if so.
+                
                 if (self.serv_pipe.poll()):
                     self.rfc_index = self.serv_pipe.recv()
 
-                peer_thread = PeerThread(ip_addr, port, client_sock, self.rfc_index)
+                peer_thread = PeerThread(ip_addr, port, client_sock, self.rfc_index, self.rfc_index_lock)
                 peer_thread.start()
 
                 worker_threads.append(peer_thread)
