@@ -2,6 +2,7 @@ from LinkedList import LinkedList
 from RFCServer import RFCServer
 from multiprocessing import Process, Pipe
 import ProtocolTranslator
+import sys
 import time
 import os
 import signal
@@ -57,88 +58,164 @@ def main_menu():
     # Client cookie
     cookie = -1
     while True:
-        try:
-            command = input('(1) Register, (2) DownloadRFC, (3) KeepAlive, (4) Leave:\n')
-            if command == "Register":
+        command = input('(1) Register, (2) DownloadRFC, (3) KeepAlive, (4) Leave:\n')
+        if command == "Register":
 
-                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                sock.connect(('127.0.0.1', RS_PORT))
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect(('127.0.0.1', RS_PORT))
 
-                request = ProtocolTranslator.registerQueryToProtocol(HOST, 11000, cookie)
-                print(request)
-                sock.send(request.encode('ascii'))
+            request = ProtocolTranslator.registerQueryToProtocol(HOST, rfc_server_port, cookie)
+            print(request)
+            sock.send(request.encode('ascii'))
 
+            response_bytes = sock.recv(2048)
+            response = str(response_bytes.decode('ascii'))
+            print(response)
+
+            cookie = ProtocolTranslator.registerResponseToElements(response)
+            sock.close()
+
+        elif command == "DownloadRFC":
+
+            # Check if unregistered client
+            if cookie == -1:
+                print("You must Register first!\n")
+                continue
+
+            # PQuery: when a peer wishes to download a query, it first sends this query message to the RS (by
+            # opening a new TCP connection), and in response it receives a list of active peers that includes
+            # the hostname and RFC server port information.
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect(('127.0.0.1', RS_PORT))
+
+            request = ProtocolTranslator.pqueryQueryToProtocol(cookie)
+            print(request)
+
+            sock.send(request.encode('ascii'))
+            response = ''
+
+            while True:
                 response_bytes = sock.recv(2048)
-                response = str(response_bytes.decode('ascii'))
-                print(response)
+                response += str(response_bytes.decode('ascii'))
 
-                cookie = ProtocolTranslator.registerResponseToElements(response)
-                sock.close()
+                if response[-4:] == "END\n":
+                    break
 
-            elif command == "DownloadRFC":
+            print(response)
 
-                # Check if unregistered client
-                if cookie == -1:
-                    print("You must Register first.\n")
-                    return
+            success, p_list = ProtocolTranslator.pqueryResponseToElements(response)
 
-                # Connect to RS and get peer list
-                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                sock.connect(('127.0.0.1', RS_PORT))
+            global Peer_List
+            if success:
+                Peer_List = p_list
 
-                request = ProtocolTranslator.pqueryQueryToProtocol(cookie)
-                print(request)
+            ########################################################################
+            ########################################################################
+            ########################################################################
+            ########################################################################
 
-                sock.send(request.encode('ascii'))
-                response = ''
-
-                while True:
-                    response_bytes = sock.recv(2048)
-                    response += str(response_bytes.decode('ascii'))
-
-                    if response[-4:] == "END\n":
-                        break
-
-                print(response)
-
-                success, p_list = ProtocolTranslator.pqueryResponseToElements(response)
-
-                global Peer_List
-                if success:
-                    Peer_List = p_list
-
-                ########################################################################
-                ########################################################################
-                ########################################################################
-                ########################################################################
-
-                rfc = 0
-                # Check RFC number is an integer value
+            global rfc
+            rfc = 0
+            # Ask user for specific RFC number and ensure it is an integer value
+            while True:
                 try:
-                    rfc = input("Which RFC would you like to download?\n")
+                    rfc = int(input("Which RFC would you like to download?\n"))
                 except ValueError:
                     print("That is not an integer!\n")
+                    continue
+                else:
+                    break
 
-                # first check merged RFC Index
-                global RFC_index
-                record = RFC_index.search(rfc)
+            # Search RFC Index for RFC
+            global RFC_index
+            record = RFC_index.search(rfc)
 
-                # If found in merged RFC Index
-                if record is not None:
-                    # Client already owns the RFC file
-                    if record.hostname == HOST:
-                        print("RFC record is already available on this system!\n")
+            # First --> If RFC is found in local RFC Index
+            if record is not None and Peer_List:
+                # Client already owns the RFC file
+                # (Found in RFC Index and we already own the RFC document)
+                if record.hostname == HOST:
+                    print("RFC record is already available on this system!\n")
+                    continue
 
-                    # find the port number of the peer in the peer list
-                    # open up a socket to this peer
-                    # send a request to the peer to get their RFC
-                    # receive the downloaded text file
-                    else:
-                        found = 0
-                        for peer in Peer_List.peer_list:
-                            if record.hostname == peer.hostname:
+                # find the port number of the peer in the peer list
+                # open up a socket to this peer
+                # send a request to the peer to get their RFC
+                # receive the downloaded text file
+                # Then --> GetRFC: a peer requests to download a specific RFC document from a remote peer.
+                # (RFC document found in RFC Index, used hostname and Peer List to contact peer)
+                else:
+                    found = False
+                    for peer in Peer_List.peer_list:
+                        if record.hostname == peer.hostname:
+                            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                            sock.connect((peer.hostname, peer.port))
+
+                            request = ProtocolTranslator.getRfcQueryToProtocol(rfc)
+                            print(request)
+                            sock.send(request.encode('ascii'))
+
+                            response_bytes = sock.recv(2048)
+                            response = str(response_bytes.decode('ascii'))
+                            print(response)
+
+                            found, rfc_file = ProtocolTranslator.getRfcResponseToElements(response)
+                            print(rfc_file)
+                            sock.close()
+
+                    # Peer with RFC document is found
+                    if found is True:
+                        print("We have found a peer with this RFC record!\n")
+                return
+
+            # If not found in local RFC Index - need to contact another peer to merge peer list
+            # First --> RFCQuery: a peer requests the RFC index from a remote peer.
+            # Then --> GetRFC: a peer requests to download a specific RFC document from a remote peer.
+            # (RFC document NOT found in RFC Index, need to iteratively contact peers from Peer List and merge
+            # RFC Indexes to find RFC document)
+            elif record is None and Peer_List:
+                flag = 0
+                # Contact all peers in Peer List until RFC document identified in merged RFC Index
+                for peer in Peer_List.peer_list:
+                    print('for loop\n')
+                    print(peer.hostname)
+                    print(peer.port)
+                    print(peer.isPeerActive())
+
+                    if peer.isPeerActive():
+                        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                        sock.connect((peer.hostname, peer.port))
+
+                        request = ProtocolTranslator.rfcqueryQueryToProtocol(peer.hostname)
+                        print('REQUEST:')
+                        print(request)
+
+                        sock.send(request.encode('ascii'))
+                        response_bytes = sock.recv(2048)
+                        response = str(response_bytes.decode('ascii'))
+                        print('RESPONSE:')
+                        print(response)
+
+                        b, rfc_idx = ProtocolTranslator.rfcQueryResponseToElements(response)
+
+                        print('RFC INDEX:')
+                        print(rfc_idx)
+
+                        sock.close()
+
+                        # Peer has non-empty RFC Index
+                        if rfc_idx is not None:
+                            print('RFC index not none\n')
+                            RFC_index = RFC_index.merge_sort(RFC_index, rfc_idx)
+                            print('List merged\n')
+
+                            # Search RFC Index for RFC
+                            rfc_record = RFC_index.search(rfc)
+                            # RFC document found in newly merged RFC Index
+                            if rfc_record is not None:
+                                print('RFC is found\n')
                                 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                                sock.connect(('127.0.0.1', peer.port))
+                                sock.connect((rfc_record.hostname, rfc_record.port))
 
                                 request = ProtocolTranslator.getRfcQueryToProtocol(rfc)
                                 print(request)
@@ -148,89 +225,84 @@ def main_menu():
                                 response = str(response_bytes.decode('ascii'))
                                 print(response)
 
-                                rfc_file = ProtocolTranslator.getRfcResponseToElements(response)
+                                found, rfc_file = ProtocolTranslator.getRfcResponseToElements(response)
                                 print(rfc_file)
                                 sock.close()
 
-                                found = 1
-                        if found == 1:
-                            print("We have found a peer with this RFC record!\n")
-                    return
-                # If not found in merged RFC Index
-                else:
-                    flag = 0
-                    for record in Peer_List.peer_list:
-                        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                        sock.connect(('127.0.0.1', RS_PORT))
+                                # Peer contacted and RFC document received
+                                if found is True and rfc_file is not None:
+                                    print("We have found a peer and received the RFC document :)\n")
+                                    flag = 1
 
-                        request = ProtocolTranslator.rfcqueryQueryToProtocol(record.hostname)
-                        print(request)
+                            # RFC NOT found in newly merged RFC Index - move onto to next peer
+                            else:
+                                print('no RFC found in RFC Index\n')
+                                continue
 
-                        sock.send(request.encode('ascii'))
-                        response_bytes = sock.recv(2048)
-                        response = str(response_bytes.decode('ascii'))
-                        print(response)
+                        # Peer has empty RFC Index
+                        else:
+                            print('empty RFC\n')
+                            continue
 
-                        rfc_idx = ProtocolTranslator.rfcQueryResponseToElements(response)
+                if flag == 0:
+                    print("We have not found a peer with the RFC document :(\n")
 
-                        if rfc_idx is not None:
-                            RFC_index = LinkedList.merge_sort(RFC_index, rfc_idx)
+                # iterate through the peers in the peer list
+                # open a socket to this peer
+                # send a request to the peer to get their rfc index
+                # merge index with own index
+                # check the rfc index again
+                # if rfc index now has the RFC wanted
+                # break out of this loop and send a get RFC request to this peer
+                # continue to next peer in the peer list
 
-                        sock.close()
-                        # iterate through the peers in the peer list
-                        # open a socket to this peer
-                        # send a request to the peer to get their rfc index
-                        # merge index with own index
-                        # check the rfc index again
-                        # if rfc index now has the RFC wanted
-                        # break out of this loop and send a get RFC request to this peer
-                        # continue to next peer in the peer list
+                # if file is not found after going through all active peers
+                # return a message that the file does not exist
 
-                    # if file is not found after going through all active peers
-                    # return a message that the file does not exist
+            elif Peer_List is None:
+                print('No Active Peers!\n')
+                continue
 
-                sock.close()
+            sock.close()
 
-            elif command == "KeepAlive":
+        elif command == "KeepAlive":
 
-                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                sock.connect(('127.0.0.1', RS_PORT))
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect(('127.0.0.1', RS_PORT))
 
-                request = ProtocolTranslator.keepAliveQueryToProtocol(cookie)
-                print(request)
-                sock.send(request.encode('ascii'))
+            request = ProtocolTranslator.keepAliveQueryToProtocol(cookie)
+            print(request)
+            sock.send(request.encode('ascii'))
 
-                response_bytes = sock.recv(2048)
-                response = str(response_bytes.decode('ascii'))
-                print(response)
-                ProtocolTranslator.keepAliveResponseToElements(response)
+            response_bytes = sock.recv(2048)
+            response = str(response_bytes.decode('ascii'))
+            print(response)
+            ProtocolTranslator.keepAliveResponseToElements(response)
 
-                sock.close()
+            sock.close()
 
-            elif command == "Leave":
+        elif command == "Leave":
 
-                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                sock.connect(('127.0.0.1', RS_PORT))
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect(('127.0.0.1', RS_PORT))
 
-                request = ProtocolTranslator.leaveQueryToProtocol(cookie)
-                print(request)
-                sock.send(request.encode('ascii'))
+            request = ProtocolTranslator.leaveQueryToProtocol(cookie)
+            print(request)
+            sock.send(request.encode('ascii'))
 
-                response_bytes = sock.recv(2048)
-                response = str(response_bytes.decode('ascii'))
-                print(response)
-                ProtocolTranslator.leaveResponseToElements(response)
+            response_bytes = sock.recv(2048)
+            response = str(response_bytes.decode('ascii'))
+            print(response)
+            ProtocolTranslator.leaveResponseToElements(response)
 
-                sock.close()
+            sock.close()
 
-            elif command == "Exit":
+        elif command == "Exit":
 
-                print("Bye!\n")
-                break
+            break
 
-        except ValueError:
-            print("Invalid Command\n")
-            return True
+    print("Successfully exited program\n")
+    sys.exit(0)
 
 ## maintain cookie at all times (send cookie and RS returns cookie)
 
@@ -285,10 +357,13 @@ rfc_server_port = client_pipe.recv()
 HOST = '127.0.0.1'  # Standard loopback interface address (localhost)
 RS_PORT = 65243
 
+# RFC requested
+rfc = 0
+
 # Peer List for this client
 Peer_List = None
 
 # Adds its RFCs to the RFC index
-RFC_index.add_sort(8540, '127.0.0.1', 'Stream Control Transmission Protocol: Errata and Issues in RFC 4960', 7200)
+RFC_index.add_sort(8543, 'Stream Control Transmission Protocol: Errata and Issues in RFC 4960', '127.0.2.2', 7200)
 
 main_menu()
