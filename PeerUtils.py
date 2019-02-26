@@ -1,25 +1,83 @@
+import os
 
 """
-Creates the RFC index for this Peer.
-NOTE: Call this function on Peer startup
+Creates the RFC Index for this Peer for the passed in RFC index and hostname.
+If the RFCs directory does not exist on this Peer - it will create this directory.
+Otherwise, updates the RFC Index with all RFCs this Peer has in their RFCs directory.
+NOTE: Call this function on PeerClient.py startup
 """
-def createRFCIndex(rfc_index):
-    #TODO
-    return
-    # check if RFC directory exists
+def createRFCIndex(rfc_index, hostname):
+    # Checks if RFCs directory exists
+    # Does not exits - creates the RFCs directory
+    if not os.path.exists("RFCs"):
+        os.mkdir("RFCs")
 
-    # if not - creates this directory from current directory
+    # RFC directory exists
+    # Creates an RFC record for each document this Peer has in the RFC directory
+    else:
+        path = "RFCs/"
+        for filename in os.listdir(path):
+            filepath = os.path.join(path, filename)
 
-    # if so - creates an RFC record for each document this Peer has in the RFC directory
+            rfc_num = int(filename[3:7])
+            file = open(filepath, "r")
+            lines = file.readlines()
+
+            idx = 0
+            length = len(lines)
+            while idx < length:
+                if "Abstract" in lines[idx]:
+                    break
+                idx += 1
+            idx = idx - 1
+            title = ''
+            title_found = False
+            title_complete = False
+            while not title_found or not title_complete:
+                if not title_found and lines[idx] == '\n':
+                    idx = idx - 1
+                elif not title_found and lines[idx] != '\n':
+                    title_found = True
+                    title += lines[idx].strip()
+                    idx = idx - 1
+                elif not title_complete and lines[idx] != '\n':
+                    temp = title
+                    title = lines[idx].strip()
+                    title = title + ' ' + temp
+                    idx = idx - 1
+                elif not title_complete and lines[idx] == '\n':
+                    title_complete = True
+
+            file.close()
+
+            rfc_index.add_sort( rfc_num, title, hostname )
 
 """
-Downloads the RFC file this Peer Client received from another Peer Server.
+Writes the RFC file this Peer Client received from another Peer Server
+to the corresponding new file in their RFCs directory.
+Takes in the RFC number and the string representation of this RFC file's 
+text that was received from the other Peer as its parameters.
 """
-def downloadRFC( rfc_string ):
-    #TODO
-    return
-    # opens a new file to the RFC directory
+def writeRFCFile( rfc_string, rfc_num ):
+    path = "RFCs/"
+    filepath = os.path.join(path, "rfc" + str(rfc_num) + ".txt" )
+    file = open(filepath, "w+")
 
-    # writes the string to the file with the name of rfc####.txt
+    file.write(rfc_string)
+
+    file.close()
 
     # also, needs to update RFC Index ( you now hold this RFC  )
+
+"""
+Returns this RFC File's string representation for the passed in RFC number parameter.
+"""
+def getRFCFileText( rfc_num ):
+    path = "RFCs/"
+    filepath = os.path.join(path, "rfc" + str(rfc_num) + ".txt")
+    file = open(filepath, "r")
+
+    rfc_file_lines = file.read()
+    file.close()
+
+    return rfc_file_lines
