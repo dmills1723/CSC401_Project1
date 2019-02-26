@@ -2,6 +2,7 @@ from LinkedList import LinkedList
 from RFCServer import RFCServer
 from multiprocessing import Process, Pipe
 import ProtocolTranslator
+import PeerUtils
 import sys
 import time
 import os
@@ -180,9 +181,9 @@ def main_menu():
                     print('for loop\n')
                     print(peer.hostname)
                     print(peer.port)
-                    print(peer.isPeerActive())
+                    print(peer.isActive)
 
-                    if peer.isPeerActive():
+                    if peer.isActive:
                         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                         sock.connect((peer.hostname, peer.port))
 
@@ -206,7 +207,7 @@ def main_menu():
                         # Peer has non-empty RFC Index
                         if rfc_idx is not None:
                             print('RFC index not none\n')
-                            RFC_index = RFC_index.merge_sort(RFC_index, rfc_idx)
+                            RFC_index.merge_sort(RFC_index.head, rfc_idx.head)
                             print('List merged\n')
 
                             # Search RFC Index for RFC
@@ -215,7 +216,7 @@ def main_menu():
                             if rfc_record is not None:
                                 print('RFC is found\n')
                                 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                                sock.connect((rfc_record.hostname, rfc_record.port))
+                                sock.connect((rfc_record.hostname, peer.port))
 
                                 request = ProtocolTranslator.getRfcQueryToProtocol(rfc)
                                 print(request)
@@ -226,11 +227,13 @@ def main_menu():
                                 print(response)
 
                                 found, rfc_file = ProtocolTranslator.getRfcResponseToElements(response)
-                                print(rfc_file)
+                                rfc_file_lines = PeerUtils.getRFCFileText(rfc_file)
+                                PeerUtils.writeRFCFile(rfc_file_lines, rfc_file)
+                                print(rfc_file_lines)
                                 sock.close()
 
                                 # Peer contacted and RFC document received
-                                if found is True and rfc_file is not None:
+                                if found is True and rfc_file_lines is not None:
                                     print("We have found a peer and received the RFC document :)\n")
                                     flag = 1
 
@@ -331,6 +334,18 @@ def main_menu():
 
 RFC_index = LinkedList()
 
+# Adds its RFCs to the RFC index
+RFC_index.add_sort(8540, 'Stream Control Transmission Protocol: Errata and Issues in RFC 4960', '127.0.0.1', 7200)
+
+# RFC requested
+rfc = 0
+
+# Peer List for this client
+Peer_List = None
+
+HOST = '127.0.0.1'  # Standard loopback interface address (localhost)
+RS_PORT = 65243
+
 ###### Start RFCServer as subprocess. #######
 
 # Creates pipe for passing objects between parent and child process.
@@ -338,7 +353,6 @@ client_pipe, server_pipe = Pipe()
 
 # Creates child process that runs "run_rfc_server()".
 # Passes the RFC index to the child process on startup.
-
 
 print("run_rfc_server: \n")
 server_proc = Process(target=run_rfc_server, args=(server_pipe, RFC_index,))
@@ -353,17 +367,5 @@ rfc_server_port = client_pipe.recv()
 # When this client is finished, the RFC server is terminated.
 # This could also be written so that the RFC server runs in
 # the background after the client is terminated.
-
-HOST = '127.0.0.1'  # Standard loopback interface address (localhost)
-RS_PORT = 65243
-
-# RFC requested
-rfc = 0
-
-# Peer List for this client
-Peer_List = None
-
-# Adds its RFCs to the RFC index
-RFC_index.add_sort(8543, 'Stream Control Transmission Protocol: Errata and Issues in RFC 4960', '127.0.2.2', 7200)
 
 main_menu()
