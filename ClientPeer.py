@@ -152,10 +152,13 @@ def main_menu():
             # RFC Indexes to find RFC document)
             elif record is None and Peer_List:
                 flag = 0
+                print(Peer_List)
                 # Contact all peers in Peer List until RFC document identified in merged RFC Index
                 for peer in np.flip(Peer_List.peer_list):
 
                     if peer.isActive:
+                        #TODO: need exception for handling when a Peer on the PeerList is no longer connected
+                        #Could have disconnected by TTL has not expired yet
                         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                         sock.connect((peer.hostname, peer.port))
                         request = ProtocolTranslator.rfcqueryQueryToProtocol(peer.hostname)

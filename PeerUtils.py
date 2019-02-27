@@ -51,7 +51,7 @@ def createRFCIndex(rfc_index, hostname):
 
             file.close()
 
-            rfc_index.add_sort( rfc_num, title, hostname )
+            rfc_index.add_sort( rfc_num, title, hostname, isLocal = True )
 
 """
 Writes the RFC file this Peer Client received from another Peer Server
