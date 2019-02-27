@@ -96,3 +96,17 @@ def getIPAddress():
 
     sock.close()
     return ip_addr
+
+"""
+Gets the passed in Hostname for the RS from the Command Line Arguments.
+If command line arguments invalid, returns False and a usage method.
+If valid, returns True and the hostname of the RS server.
+"""
+def getRSHostname( sys_args ):
+
+    if( len(sys_args) != 2):
+        return False, "Usage: python3 ClientPeer.py <Hostname of RS Server>"
+
+    hostname = sys_args[1]
+
+    return True, hostname
