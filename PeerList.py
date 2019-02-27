@@ -56,17 +56,19 @@ class PeerRecord:
         # self.ttl stores the time a PeerRecord will no longer be active,
         # rather than the actual TTL. The actuall TTL is calculated here
         # for the string representation.
+        '''
         if ( self.ttl < time.time() ) :
             ttl = 0
         else :
             #ttl = self.ttl - time.time()
             ttl = math.ceil( self.ttl - time.time() )
+        '''
 
         #lastRegistration_datetime = time.strftime( '%Y-%m-%d %H:%M:%S', time.localtime(self.lastRegistrationTime))
 
         return ("Hostname:%s\nCookie:%s\nPort:%s\nTTL:%f\nActive:%s\n"
                "LastRegistered:%f\nTimesActiveInMonth:%d\n"
-                %( self.hostname, self.cookie, self.port, ttl, self.isActive, 
+                %( self.hostname, self.cookie, self.port, self.ttl, self.isActive, 
                 self.lastRegistrationTime, self.timesActive ))
 
     '''
