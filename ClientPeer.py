@@ -39,12 +39,12 @@ def run_rfc_server(server_pipe, rfc_index):
     rfc_server.run()
 
 
-# Main menu prompt --> (1) Register, (2) DownloadRFC, (3) KeepAlive, (4) Leave
+# Main menu prompt --> (1) Register, (2) DownloadRFC, (3) KeepAlive, (4) Leave, (5) Exit
 def main_menu():
     # Client cookie
     cookie = -1
     while True:
-        command = input('(1) Register, (2) DownloadRFC, (3) KeepAlive, (4) Leave:\n')
+        command = input('(1) Register, (2) DownloadRFC, (3) KeepAlive, (4) Leave, (5) Exit:\n')
         print('')
         if command == "Register":
 
@@ -137,8 +137,12 @@ def main_menu():
                     found = False
                     for peer in np.flip(Peer_List.peer_list):
                         if record.hostname == peer.hostname:
-                            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                            sock.connect((peer.hostname, peer.port))
+                            try:
+                                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                                sock.connect((peer.hostname, peer.port))
+                            except:
+                                sock.close()
+                                continue
 
                             request = ProtocolTranslator.getRfcQueryToProtocol(rfc)
                             print(request)
@@ -299,6 +303,7 @@ def main_menu():
         else:
             print("Invalid Command\n")
 
+    #TODO: Exit command is not shutting down sub process? Program is still running.
     print("Successfully exited program\n")
     sys.exit(0)
 
@@ -327,8 +332,6 @@ else:
 
 # Adds its RFCs to the RFC index\
 PeerUtils.createRFCIndex(RFC_index, HOST)
-
-print(RFC_index)
 
 # RFC requested
 rfc = 0

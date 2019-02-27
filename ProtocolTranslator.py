@@ -309,14 +309,13 @@ def getRfcResponseToProtocol( has_file, rfc_file_text ):
 
 def getRfcResponseToElements( response ):
     lines = response.splitlines()
+    rfc_txt = ''
     if lines[0] == '400 BAD REQUEST':
-        return False, None
+        return False, rfc_txt
     else:
-        # Might need to be more detailed than this but right not
-        # just returning the rfc file as one string
-        rfc_txt = lines[2]
-
-        return True, rfc_txt
+        length = len(lines)
+        rfc_txt = "\n".join(lines[2:length - 1])
+    return True, rfc_txt
 
 # Return for a request that doesn't match an expected request.
 # Ideally, this shouldn't be called.

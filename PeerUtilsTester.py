@@ -11,7 +11,7 @@ PeerUtils.createRFCIndex(rfc_index, '127.0.0.1')
 print(rfc_index)
 
 # Creates a query for the RFC 8540
-query = ProtocolTranslator.getRfcQueryToProtocol(8540)
+query = ProtocolTranslator.getRfcQueryToProtocol(8537)
 print(query)
 
 # Interprets the query for the RFC to obtain the RFC number
