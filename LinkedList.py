@@ -181,6 +181,7 @@ class LinkedList:
         current = self.head
         current_time = time.time()
         while current :
+            print("here")
             if current.isLocal :
                 current.reset_ttl()
                 current.isLocal = False

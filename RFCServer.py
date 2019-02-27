@@ -75,7 +75,7 @@ class PeerThread(threading.Thread):
             print( self.rfc_index )
             print( "made it here 0" )
             # Updates locally stored RFCs TTLs to 7200 plus current time.
-            self.rfc_index.update_ttls_for_rfcquery()
+          #  self.rfc_index.update_ttls_for_rfcquery()
 
             print( "made it here A" )
             # sends back a response message with the cookie
@@ -104,7 +104,7 @@ class PeerThread(threading.Thread):
 
         print( "made it here 1" )
         # sends the response to the peer client
-        self.socket.sendall(response_bytes)
+        self.socket.send(response_bytes)
 
         print( "made it here 2" )
 

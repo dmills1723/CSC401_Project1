@@ -89,7 +89,7 @@ def main_menu():
                     break
 
             print(response)
-
+            sock.close()
             list_success, p_list = ProtocolTranslator.pqueryResponseToElements(response)
 
             global Peer_List
@@ -181,9 +181,20 @@ def main_menu():
                         request = ProtocolTranslator.rfcqueryQueryToProtocol(peer.hostname)
                         print(request)
                         sock.send(request.encode('ascii'))
-                        response_bytes = sock.recv(2048)
-                        response = str(response_bytes.decode('ascii'))
+
+                        response = ''
+
+                        while True:
+                            response_bytes = sock.recv(2048)
+                            response += str(response_bytes.decode('ascii'))
+
+                            if response[-4:] == "END\n":
+                                break
+
                         print(response)
+                        #response_bytes = sock.recv(2048)
+                        #response = str(response_bytes.decode('ascii'))
+                        #print(response)
 
                         b, rfc_idx = ProtocolTranslator.rfcQueryResponseToElements(response)
 
@@ -204,10 +215,19 @@ def main_menu():
                                 request = ProtocolTranslator.getRfcQueryToProtocol(rfc)
                                 print(request)
                                 sock.send(request.encode('ascii'))
+                                response = ''
 
-                                response_bytes = sock.recv(2048)
-                                response = str(response_bytes.decode('ascii'))
+                                while True:
+                                    response_bytes = sock.recv(2048)
+                                    response += str(response_bytes.decode('ascii'))
+
+                                    if response[-4:] == "END\n":
+                                        break
+
                                 print(response)
+                                #response_bytes = sock.recv(2048)
+                                #response = str(response_bytes.decode('ascii'))
+                                #print(response)
 
                                 found, rfc_file = ProtocolTranslator.getRfcResponseToElements(response)
                                 PeerUtils.writeRFCFile(rfc_file, rfc)
@@ -240,7 +260,7 @@ def main_menu():
                 print('No Active Peers!\n')
                 continue
 
-            sock.close()
+            #sock.close()
 
         elif command == "KeepAlive":
 
@@ -307,6 +327,8 @@ else:
 
 # Adds its RFCs to the RFC index\
 PeerUtils.createRFCIndex(RFC_index, HOST)
+
+print(RFC_index)
 
 # RFC requested
 rfc = 0
