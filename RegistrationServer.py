@@ -6,7 +6,7 @@ import socket
 import threading
 import time
 import sys
-import struct
+import PeerUtils
 
 
 """
@@ -201,7 +201,7 @@ peer_list = PeerList()
 lock = threading.Lock()
 
 # using local for testing      
-host = '127.0.0.1'
+host =  PeerUtils.getIPAddress()
 
 # port the RS server listens on
 port = 65243
@@ -216,18 +216,30 @@ sock.bind((host, port))
 # initialize a list of the peer threads
 peer_threads = []
 
-# while the server is running
-while True:
+try:
+    # while the server is running
 
-    # listen for new connections from peers
-    sock.listen()
-    
-    # accept the connection from the client
-    # retrieve the client socket, ip address, and port number sent
-    (client_sock, (ip_addr, port)) = sock.accept()
-    
-    # obtain the new peer thread passing in the ip address, port number, and socket
-    peer_thread = PeerThread(ip_addr, port, client_sock)
-    
-    # start this new peer thread
-    peer_thread.start()
+    while True:
+
+        # listen for new connections from peers
+        sock.listen(5)
+
+        # accept the connection from the client
+        # retrieve the client socket, ip address, and port number sent
+        (client_sock, (ip_addr, port)) = sock.accept()
+
+        # obtain the new peer thread passing in the ip address, port number, and socket
+        peer_thread = PeerThread(ip_addr, port, client_sock)
+
+        # start this new peer thread
+        peer_thread.start()
+
+        peer_threads.append( peer_thread)
+
+except KeyboardInterrupt:
+    for peer_thread in peer_threads:
+        peer_thread.join()
+
+    print("\nRegistration System Exiting")
+    sys.exit(1)
+
