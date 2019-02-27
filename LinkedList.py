@@ -29,7 +29,7 @@ class Node:
         return self.next
 
     # Reset TTL to 7200 seconds
-    def reset_ttl( self ) 
+    def reset_ttl( self ):
         self.ttl = self.TTL_DEFAULT + math.floor( time.time() )
 
     # Set next node of linked list
@@ -112,7 +112,7 @@ class LinkedList:
         prev.next = head.next
 
     # Add nodes to list in sorted order
-    def add_sort(self, rfc_num, title, hostname, ttl=self.TTL_DEFAULT, isLocal=False):
+    def add_sort(self, rfc_num, title, hostname, ttl=7200, isLocal=False):
         current = self.head
         previous = None
         flag = False
@@ -188,4 +188,4 @@ class LinkedList:
             elif ( current.ttl < current_time ) :
                 temp = current
                 current = current.next
-                remove_node( temp.rfc_num, temp.hostname)
+                self.remove_node( temp.rfc_num, temp.hostname)
