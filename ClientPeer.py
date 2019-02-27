@@ -137,28 +137,28 @@ def main_menu():
                     found = False
                     for peer in np.flip(Peer_List.peer_list):
                         if record.hostname == peer.hostname:
-                            try:
-                                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                                sock.connect((peer.hostname, peer.port))
-                            except:
-                                sock.close()
-                                continue
+                            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                            sock.connect((peer.hostname, peer.port))
 
-                                request = ProtocolTranslator.getRfcQueryToProtocol(rfc)
-                                print(request)
-                                sock.send(request.encode('ascii'))
+                            request = ProtocolTranslator.getRfcQueryToProtocol(rfc)
+                            print(request)
+                            sock.send(request.encode('ascii'))
 
-                                response_bytes = sock.recv(2048)
-                                print(response)
-                                response = str(response_bytes.decode('ascii'))
+                            response_bytes = sock.recv(2048)
+                            response = str(response_bytes.decode('ascii'))
+                            print(response)
 
-                                found, rfc_file = ProtocolTranslator.getRfcResponseToElements(response)
-                                sock.close()
+                            found, rfc_file = ProtocolTranslator.getRfcResponseToElements(response)
+                            PeerUtils.writeRFCFile(rfc_file, rfc)
+
+                            print( rfc_file )
+                            sock.close()
 
                     # Peer with RFC document is found
                     if found is True:
                         print("We have found a peer with this RFC record!\n")
-                return
+                continue
+                #return
 
             # If not found in local RFC Index - need to contact another peer to merge peer list
             # First --> RFCQuery: a peer requests the RFC index from a remote peer.
@@ -218,9 +218,12 @@ def main_menu():
                                     print("We have found a peer and received the RFC document :)\n")
                                     flag = 1
                                     # Add node to RFC Index with num/title of RFC found, local host, and 7200 TTL
+                                    print( "Z" )
                                     RFC_index.add_sort(rfc, rfc_record.title, HOST, isLocal=True )
 
+                                    print( "Y" )
                                     client_pipe.send(RFC_index)
+                                    print( "X" )
 
                             # RFC NOT found in newly merged RFC Index - move onto to next peer
                             else:
