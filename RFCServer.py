@@ -191,7 +191,7 @@ class RFCServer():
         # off to PeerThreads. A SIGINT will break out of this loop.
         while True:
             try:
-                self.serv_sock.listen()
+                self.serv_sock.listen(5)
                 (client_sock, (ip_addr, port)) = self.serv_sock.accept()
 
                 # Check if an updated RFC index has been sent from the client.
