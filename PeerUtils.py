@@ -64,7 +64,7 @@ def writeRFCFile( rfc_string, rfc_num ):
     filepath = os.path.join(path, "rfc" + str(rfc_num) + ".txt" )
     file = open(filepath, "w+")
 
-    file.write(rfc_string)
+    file.write(rfc_string[:-1])
 
     file.close()
 
