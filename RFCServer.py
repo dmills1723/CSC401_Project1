@@ -70,6 +70,9 @@ class PeerThread(threading.Thread):
             # This is passed to ProtocolTranslator.rfcQueryResponseToProtocol
             nonEmptyIndex = (self.rfc_index.size() > 0)
 
+            # Updates locally stored RFCs TTLs to 7200 plus current time.
+            self.rfc_index.update_ttls_for_rfcquery()
+
             # sends back a response message with the cookie
             response = PT.rfcQueryResponseToProtocol(nonEmptyIndex, str( self.rfc_index ))
 
