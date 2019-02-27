@@ -194,9 +194,18 @@ def main_menu():
                             print(request)
                             sock.send(request.encode('ascii'))
 
-                            response_bytes = sock.recv(2048)
-                            response = str(response_bytes.decode('ascii'))
+                            while True:
+                                response_bytes = sock.recv(2048)
+                                response += str(response_bytes.decode('ascii'))
+
+                                if response[-4:] == "END\n":
+                                    break
+
                             print(response)
+
+                            #response_bytes = sock.recv(2048)
+                            #response = str(response_bytes.decode('ascii'))
+                            #print(response)
 
                             found, rfc_file = ProtocolTranslator.getRfcResponseToElements(response)
                             PeerUtils.writeRFCFile(rfc_file, rfc)
