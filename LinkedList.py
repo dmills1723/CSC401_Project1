@@ -2,12 +2,14 @@ import time
 import math
 
 class Node:
+    TTL_DEFAULT = 7200
     # Initial
-    def __init__(self, rfc_num, title, hostname, ttl=7200):
+    def __init__(self, rfc_num, title, hostname, isLocal=False):
         self.rfc_num = rfc_num
         self.title = title
         self.hostname = hostname
-        self.ttl = ttl
+        self.ttl = self.TTL_DEFAULT + time.time()
+        self.isLocal = isLocal 
         self.next = None
 
     # Get RFC Number
@@ -22,17 +24,13 @@ class Node:
     def get_hostname(self):
         return self.hostname
 
-    # Get TTL of peer
-    def get_ttl(self):
-        return self.ttl
-
     # Get next node of linked list
     def get_next(self):
         return self.next
 
     # Reset TTL to 7200 seconds
-    def reset_ttl(self, ttl=7200):
-        self.ttl = ttl
+    def reset_ttl( self ) 
+        self.ttl = self.TTL_DEFAULT + math.floor( time.time() )
 
     # Set next node of linked list
     def set_next(self, new):
@@ -46,19 +44,6 @@ class Node:
             return False
 
     def __str__( self ) :
-        # self.ttl stores the time a PeerRecord will no longer be active,
-        # rather than the actual TTL. The actuall TTL is calculated here
-        # for the string representation.
-        #if ( self.ttl < time.time() ) :
-         #   ttl = 0
-        #else :
-            #ttl = self.ttl - time.time()
-        #   ttl = math.ceil( self.ttl - time.time() )
-
-        #lastRegistration_datetime = time.strftime( '%Y-%m-%d %H:%M:%S', time.localtime(self.lastRegistrationTime))
-
-        #return ("RFC:%d\nTitle:%s\nHostname:%s\nTTL:%f"
-        #       %( self.rfc_num, self.title, self.hostname, ttl, self.ttl ) )
         str_rfc = "RFC:" + str(self.rfc_num) + "\n"
         str_rfc += "Title:" + self.title + "\n"
         str_rfc += "Hostname:" + self.hostname + "\n"
@@ -105,21 +90,6 @@ class LinkedList:
 
         return current
 
-    # Add node at the end of linked list
-    def insert_end(self, rfc_num, title, hostname, ttl=7200):
-        new = Node(rfc_num, title, hostname, ttl)
-
-        if self.head is None:
-            self.head = new
-            return
-
-        last = self.head
-
-        while last.next:
-            last = last.next
-
-        last.next = new
-
     # Remove node from linked list
     def remove_node(self, rfc_num, hostname):
         head = self.head
@@ -142,7 +112,7 @@ class LinkedList:
         prev.next = head.next
 
     # Add nodes to list in sorted order
-    def add_sort(self, rfc_num, title, hostname, ttl=7200):
+    def add_sort(self, rfc_num, title, hostname, ttl=self.TTL_DEFAULT, isLocal=False):
         current = self.head
         previous = None
         flag = False
@@ -153,7 +123,7 @@ class LinkedList:
                 previous = current
                 current = current.get_next()
 
-        temp = Node(rfc_num, title, hostname, ttl)
+        temp = Node(rfc_num, title, hostname, isLocal)
 
         if previous is None:
             temp.set_next(self.head)
@@ -167,11 +137,12 @@ class LinkedList:
         current = self.head
         while current:
             if current.next and ( current.rfc_num == current.next.rfc_num ) and ( current.hostname == current.next.hostname ):
-                current.next = current.next.next
-
+                if ( current.ttl >= current.next.ttl ) :
+                    current.next = current.next.next
+                else :
+                    current.ttl = current.next.ttl
+                    current.next = current.next.next
             current = current.next
-
-
 
     '''
         Returns a string representation of the PeerList, for printing 
@@ -189,16 +160,32 @@ class LinkedList:
         Merge sorted linked lists
     '''
     def merge_sort(self, list_1_head, list_2_head) :
-            if list_1_head is None:
-                return list_2_head
-            if list_2_head is None:
-                return list_1_head
+        if list_1_head is None:
+            return list_2_head
+        if list_2_head is None:
+            return list_1_head
 
-            if list_2_head.rfc_num >= list_1_head.rfc_num:
-                temp = list_1_head
-                temp.next = self.merge_sort(list_1_head.next, list_2_head)
-            else:
-                temp = list_2_head
-                temp.next = self.merge_sort(list_1_head, list_2_head.next)
+        if list_2_head.rfc_num >= list_1_head.rfc_num:
+            temp = list_1_head
+            temp.next = self.merge_sort(list_1_head.next, list_2_head)
+        else:
+            temp = list_2_head
+            temp.next = self.merge_sort(list_1_head, list_2_head.next)
 
-            return temp
+        return temp
+
+    '''
+        Iterates through the RFC index and resets all local
+        RFC index records to (TTL_DEFAULT + <seconds since epoch>)
+    '''
+    def update_ttls_for_rfcquery( self ) :
+        current = self.head
+        current_time = time.time()
+        while current :
+            if current.isLocal :
+                current.reset_ttl()
+                current.isLocal = False
+            elif ( current.ttl < current_time ) :
+                temp = current
+                current = current.next
+                remove_node( temp.rfc_num, temp.hostname)

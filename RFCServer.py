@@ -124,7 +124,7 @@ class RFCServer():
         self.serv_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
         # Gets this computer's IP address which the socket will listen on.
-        ip_addr = PU.getIPAddress()
+        ip_addr = self.getIPAddress()
 
         # Binds socket to a random, available port.
         self.serv_sock.bind((ip_addr, 0))
@@ -135,6 +135,22 @@ class RFCServer():
         # ... and sends it back to the Client.
         self.serv_pipe = serv_pipe
         self.serv_pipe.send(self.serv_port)
+
+    '''
+        Returns this computer's IP address. 
+    '''
+
+    def getIPAddress(self):
+        # Creates socket to Google's nameserver.
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.connect(("8.8.8.8", 80))
+
+        # Gets this computer's IP address from the socket connection.
+        ip_addr = sock.getsockname()[0]
+
+        sock.close()
+        #return ip_addr
+        return '127.0.0.1'
 
     '''
         Joins threads opened in run() and closes the server's socket.
