@@ -299,11 +299,11 @@ def main_menu():
             sock.close()
 
         elif command == "Exit":
+            server_proc.terminate()
             break
         else:
             print("Invalid Command\n")
 
-    #TODO: Exit command is not shutting down sub process? Program is still running.
     print("Successfully exited program\n")
     sys.exit(0)
 
