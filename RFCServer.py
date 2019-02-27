@@ -33,6 +33,7 @@ class PeerThread(threading.Thread):
                 index_lock : Mutex for accessing the rfc_index.
     '''
     def __init__(self, ip_addr, port, socket, rfc_index, rfc_index_lock ):
+    #def __init__(self, ip_addr, port, socket, rfc_index) : 
         threading.Thread.__init__(self)
         self.ip_addr = ip_addr
         self.port = port
@@ -69,12 +70,17 @@ class PeerThread(threading.Thread):
             # Check that the RFC index is non-empty. 
             # This is passed to ProtocolTranslator.rfcQueryResponseToProtocol
             nonEmptyIndex = (self.rfc_index.size() > 0)
+            #nonEmptyIndex = False
 
+            print( self.rfc_index )
+            print( "made it here 0" )
             # Updates locally stored RFCs TTLs to 7200 plus current time.
             self.rfc_index.update_ttls_for_rfcquery()
 
+            print( "made it here A" )
             # sends back a response message with the cookie
             response = PT.rfcQueryResponseToProtocol(nonEmptyIndex, str( self.rfc_index ))
+            print( "made it here B" )
 
             # Releases mutex lock on the RFC index.
             self.index_lock.release()
@@ -96,8 +102,11 @@ class PeerThread(threading.Thread):
         # translates the response protocol into bytes
         response_bytes = response.encode('ascii')
 
+        print( "made it here 1" )
         # sends the response to the peer client
         self.socket.sendall(response_bytes)
+
+        print( "made it here 2" )
 
         # Closes the socket connection with the peer.
         self.socket.close()
@@ -125,6 +134,8 @@ class RFCServer():
 
         # Creates socket to listen for incoming peers on.
         self.serv_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.serv_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
 
         # Gets this computer's IP address which the socket will listen on.
         ip_addr = self.getIPAddress()
@@ -152,8 +163,8 @@ class RFCServer():
         ip_addr = sock.getsockname()[0]
 
         sock.close()
-        #return ip_addr
-        return '127.0.0.1'
+        return ip_addr
+        #return '127.0.0.1'
 
     '''
         Joins threads opened in run() and closes the server's socket.
@@ -180,16 +191,21 @@ class RFCServer():
         # off to PeerThreads. A SIGINT will break out of this loop.
         while True:
             try:
-                self.serv_sock.listen(5)
+                self.serv_sock.listen()
                 (client_sock, (ip_addr, port)) = self.serv_sock.accept()
 
                 # Check if an updated RFC index has been sent from the client.
                 # Update the RFC index if so.
                 
+                #print( "made it here" )
                 if (self.serv_pipe.poll()):
+                    self.rfc_index_lock.acquire()
                     self.rfc_index = self.serv_pipe.recv()
+                    self.rfc_index_lock.release()
 
                 peer_thread = PeerThread(ip_addr, port, client_sock, self.rfc_index, self.rfc_index_lock)
+                #print( "made it here 2 " )
+                #peer_thread = PeerThread(ip_addr, port, client_sock, self.rfc_index)
                 peer_thread.start()
 
                 worker_threads.append(peer_thread)
