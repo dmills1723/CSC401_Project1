@@ -1,4 +1,5 @@
 import os
+import socket
 
 """
 Creates the RFC Index for this Peer for the passed in RFC index and hostname.
@@ -81,3 +82,17 @@ def getRFCFileText( rfc_num ):
     file.close()
 
     return rfc_file_lines
+
+''' 
+Returns the IP address of this computer.
+'''
+def getIPAddress():
+    # Creates socket to Google's nameserver.
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.connect(("8.8.8.8", 80))
+
+    # Gets this computer's IP address from the socket connection.
+    ip_addr = sock.getsockname()[0]
+
+    sock.close()
+    return ip_addr
