@@ -39,12 +39,12 @@ def run_rfc_server(server_pipe, rfc_index):
     rfc_server.run()
 
 
-# Main menu prompt --> (1) Register, (2) DownloadRFC, (3) KeepAlive, (4) Leave
+# Main menu prompt --> (1) Register, (2) DownloadRFC, (3) KeepAlive, (4) Leave, (5) Exit
 def main_menu():
     # Client cookie
     cookie = -1
     while True:
-        command = input('(1) Register, (2) DownloadRFC, (3) KeepAlive, (4) Leave:\n')
+        command = input('(1) Register, (2) DownloadRFC, (3) KeepAlive, (4) Leave, (5) Exit:\n')
         print('')
         if command == "Register":
 
@@ -89,7 +89,7 @@ def main_menu():
                     break
 
             print(response)
-
+            sock.close()
             list_success, p_list = ProtocolTranslator.pqueryResponseToElements(response)
 
             global Peer_List
@@ -137,8 +137,12 @@ def main_menu():
                     found = False
                     for peer in np.flip(Peer_List.peer_list):
                         if record.hostname == peer.hostname:
-                            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                            sock.connect((peer.hostname, peer.port))
+                            try:
+                                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                                sock.connect((peer.hostname, peer.port))
+                            except:
+                                sock.close()
+                                continue
 
                             request = ProtocolTranslator.getRfcQueryToProtocol(rfc)
                             print(request)
@@ -181,9 +185,20 @@ def main_menu():
                         request = ProtocolTranslator.rfcqueryQueryToProtocol(peer.hostname)
                         print(request)
                         sock.send(request.encode('ascii'))
-                        response_bytes = sock.recv(2048)
-                        response = str(response_bytes.decode('ascii'))
+
+                        response = ''
+
+                        while True:
+                            response_bytes = sock.recv(2048)
+                            response += str(response_bytes.decode('ascii'))
+
+                            if response[-4:] == "END\n":
+                                break
+
                         print(response)
+                        #response_bytes = sock.recv(2048)
+                        #response = str(response_bytes.decode('ascii'))
+                        #print(response)
 
                         b, rfc_idx = ProtocolTranslator.rfcQueryResponseToElements(response)
 
@@ -204,10 +219,19 @@ def main_menu():
                                 request = ProtocolTranslator.getRfcQueryToProtocol(rfc)
                                 print(request)
                                 sock.send(request.encode('ascii'))
+                                response = ''
 
-                                response_bytes = sock.recv(2048)
-                                response = str(response_bytes.decode('ascii'))
+                                while True:
+                                    response_bytes = sock.recv(2048)
+                                    response += str(response_bytes.decode('ascii'))
+
+                                    if response[-4:] == "END\n":
+                                        break
+
                                 print(response)
+                                #response_bytes = sock.recv(2048)
+                                #response = str(response_bytes.decode('ascii'))
+                                #print(response)
 
                                 found, rfc_file = ProtocolTranslator.getRfcResponseToElements(response)
                                 PeerUtils.writeRFCFile(rfc_file, rfc)
@@ -240,7 +264,7 @@ def main_menu():
                 print('No Active Peers!\n')
                 continue
 
-            sock.close()
+            #sock.close()
 
         elif command == "KeepAlive":
 
@@ -275,6 +299,7 @@ def main_menu():
             sock.close()
 
         elif command == "Exit":
+            server_proc.terminate()
             break
         else:
             print("Invalid Command\n")

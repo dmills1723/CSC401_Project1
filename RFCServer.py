@@ -104,7 +104,7 @@ class PeerThread(threading.Thread):
 
         print( "made it here 1" )
         # sends the response to the peer client
-        self.socket.sendall(response_bytes)
+        self.socket.send(response_bytes)
 
         print( "made it here 2" )
 
@@ -191,7 +191,7 @@ class RFCServer():
         # off to PeerThreads. A SIGINT will break out of this loop.
         while True:
             try:
-                self.serv_sock.listen()
+                self.serv_sock.listen(5)
                 (client_sock, (ip_addr, port)) = self.serv_sock.accept()
 
                 # Check if an updated RFC index has been sent from the client.
