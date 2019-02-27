@@ -39,29 +39,21 @@ def run_rfc_server(server_pipe, rfc_index):
     rfc_server.run()
 
 
-# Main menu prompt --> (1) Register, (2) PQuery (3) DownloadRFC, (4) KeepAlive, (5) Leave, (6) Exit
+# Main menu prompt --> (1) Register, (2) DownloadRFC, (3) KeepAlive, (4) Leave, (5) Exit
 def main_menu():
     # Client cookie
     cookie = -1
     while True:
-        command = input('(1) Register, (2) PQuery (3) DownloadRFC, (4) KeepAlive, (5) Leave, (6) Exit:\n')
+        command = input('(1) Register, (2) DownloadRFC, (3) KeepAlive, (4) Leave, (5) Exit:\n')
         print('')
         if command == "Register":
-
-            global leave_bool
-            # Check if client has already registered
-            if cookie != -1 and leave_bool is False:
-                print("You have already Registered!\n")
-                continue
-
-            leave_bool = False
 
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.connect((RS_HOST , RS_PORT))
 
             request = ProtocolTranslator.registerQueryToProtocol(HOST, rfc_server_port, cookie)
             print(request)
-            sock.send(request.encode('ascii'))
+            sock.sendall(request.encode('ascii'))
 
             response_bytes = sock.recv(2048)
             response = str(response_bytes.decode('ascii'))
@@ -70,10 +62,10 @@ def main_menu():
             cookie = ProtocolTranslator.registerResponseToElements(response)
             sock.close()
 
-        elif command == "PQuery":
+        elif command == "DownloadRFC":
 
             # Check if unregistered client
-            if cookie == -1 or leave_bool is True:
+            if cookie == -1:
                 print("You must Register first!\n")
                 continue
 
@@ -81,12 +73,12 @@ def main_menu():
             # opening a new TCP connection), and in response it receives a list of active peers that includes
             # the hostname and RFC server port information.
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.connect((RS_HOST, RS_PORT))
+            sock.connect((RS_HOST , RS_PORT))
 
             request = ProtocolTranslator.pqueryQueryToProtocol(cookie)
             print(request)
 
-            sock.send(request.encode('ascii'))
+            sock.sendall(request.encode('ascii'))
             response = ''
 
             while True:
@@ -102,61 +94,25 @@ def main_menu():
 
             global Peer_List
             Peer_List = p_list
-            # else:
-            # print("Error with receiving PeerList from RS")
-            # continue
 
-        elif command == "DownloadRFC":
-
-            # Check if unregistered client
-            if cookie == -1 or leave_bool is True:
-                print("You must Register first!\n")
-                continue
-
-            # PQuery: when a peer wishes to download a query, it first sends this query message to the RS (by
-            # opening a new TCP connection), and in response it receives a list of active peers that includes
-            # the hostname and RFC server port information.
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.connect((RS_HOST, RS_PORT))
-
-            request = ProtocolTranslator.pqueryQueryToProtocol(cookie)
-            print(request)
-
-            sock.send(request.encode('ascii'))
-            response = ''
-
-            while True:
-                response_bytes = sock.recv(2048)
-                response += str(response_bytes.decode('ascii'))
-
-                if response[-4:] == "END\n":
-                    break
-
-            print(response)
-            sock.close()
-            list_success, p_list = ProtocolTranslator.pqueryResponseToElements(response)
-
-            Peer_List = p_list
-            # else:
-            # print("Error with receiving PeerList from RS")
-            # continue
+            print( "-----------------------------------------------------------" )
+            print( "ClientPeer peer_list: \n%s" %Peer_List )
+            #else:
+                #print("Error with receiving PeerList from RS")
+                #continue
 
             global rfc
             rfc = 0
 
-            # If Peer List is not empty
-            if Peer_List:
-                # Ask user for specific RFC number and ensure it is an integer value
-                while True:
-                    try:
-                        rfc = int(input("Which RFC would you like to download?\n"))
-                    except ValueError:
-                        print("That is not an integer!\n")
-                        continue
-                    else:
-                        break
-            else:
-                continue
+            # Ask user for specific RFC number and ensure it is an integer value
+            while True:
+                try:
+                    rfc = int(input("Which RFC would you like to download?\n"))
+                except ValueError:
+                    print("That is not an integer!\n")
+                    continue
+                else:
+                    break
 
             # Search RFC Index for RFC
             global RFC_index
@@ -182,7 +138,7 @@ def main_menu():
                 else:
                     found = False
                     for peer in np.flip(Peer_List.peer_list):
-                        if record.hostname == peer.hostname:
+                        if ( record.hostname == peer.hostname and peer.isActive ) :
                             try:
                                 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                                 sock.connect((peer.hostname, peer.port))
@@ -192,8 +148,10 @@ def main_menu():
 
                             request = ProtocolTranslator.getRfcQueryToProtocol(rfc)
                             print(request)
-                            sock.send(request.encode('ascii'))
+                            sock.sendall(request.encode('ascii'))
 
+                            #response_bytes = sock.recv(2048)
+                            response = ''
                             while True:
                                 response_bytes = sock.recv(2048)
                                 response += str(response_bytes.decode('ascii'))
@@ -201,11 +159,8 @@ def main_menu():
                                 if response[-4:] == "END\n":
                                     break
 
-                            print(response)
-
-                            #response_bytes = sock.recv(2048)
                             #response = str(response_bytes.decode('ascii'))
-                            #print(response)
+                            print(response)
 
                             found, rfc_file = ProtocolTranslator.getRfcResponseToElements(response)
                             PeerUtils.writeRFCFile(rfc_file, rfc)
@@ -215,7 +170,8 @@ def main_menu():
 
                     # Peer with RFC document is found
                     if found is True:
-                        print("We have found a peer with this RFC record!\n")
+                       # print("We have found a peer with this RFC record!\n")
+                        print("We have found a peer and received the RFC document :)\n")
                 continue
                 #return
 
@@ -239,7 +195,7 @@ def main_menu():
                             continue
                         request = ProtocolTranslator.rfcqueryQueryToProtocol(peer.hostname)
                         print(request)
-                        sock.send(request.encode('ascii'))
+                        sock.sendall(request.encode('ascii'))
 
                         response = ''
 
@@ -273,7 +229,7 @@ def main_menu():
 
                                 request = ProtocolTranslator.getRfcQueryToProtocol(rfc)
                                 print(request)
-                                sock.send(request.encode('ascii'))
+                                sock.sendall(request.encode('ascii'))
                                 response = ''
 
                                 while True:
@@ -323,17 +279,12 @@ def main_menu():
 
         elif command == "KeepAlive":
 
-            # Check if unregistered client
-            if cookie == -1 or leave_bool is True:
-                print("You have not Registered yet!\n")
-                continue
-
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.connect((RS_HOST, RS_PORT))
 
             request = ProtocolTranslator.keepAliveQueryToProtocol(cookie)
             print(request)
-            sock.send(request.encode('ascii'))
+            sock.sendall(request.encode('ascii'))
 
             response_bytes = sock.recv(2048)
             response = str(response_bytes.decode('ascii'))
@@ -344,28 +295,17 @@ def main_menu():
 
         elif command == "Leave":
 
-            # Check if unregistered client
-            if cookie == -1:
-                print("You have not Registered yet!\n")
-                continue
-
-            if leave_bool is True:
-                print("You have already left!\n")
-                continue
-
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.connect((RS_HOST, RS_PORT))
 
             request = ProtocolTranslator.leaveQueryToProtocol(cookie)
             print(request)
-            sock.send(request.encode('ascii'))
+            sock.sendall(request.encode('ascii'))
 
             response_bytes = sock.recv(2048)
             response = str(response_bytes.decode('ascii'))
             print(response)
             ProtocolTranslator.leaveResponseToElements(response)
-
-            leave_bool = True
 
             sock.close()
 
@@ -406,10 +346,6 @@ PeerUtils.createRFCIndex(RFC_index, HOST)
 
 # RFC requested
 rfc = 0
-
-# Leave boolean, for clients who have left but not exited
-# True if client has left, false if client has not
-leave_bool = False
 
 # Peer List for this client
 Peer_List = None
