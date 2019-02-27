@@ -48,7 +48,7 @@ def main_menu():
         if command == "Register":
 
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.connect(('127.0.0.1', RS_PORT))
+            sock.connect((RS_HOST , RS_PORT))
 
             request = ProtocolTranslator.registerQueryToProtocol(HOST, rfc_server_port, cookie)
             sock.send(request.encode('ascii'))
@@ -70,7 +70,7 @@ def main_menu():
             # opening a new TCP connection), and in response it receives a list of active peers that includes
             # the hostname and RFC server port information.
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.connect(('127.0.0.1', RS_PORT))
+            sock.connect((RS_HOST , RS_PORT))
 
             request = ProtocolTranslator.pqueryQueryToProtocol(cookie)
 
@@ -195,7 +195,9 @@ def main_menu():
                                     print("We have found a peer and received the RFC document :)\n")
                                     flag = 1
                                     # Add node to RFC Index with num/title of RFC found, local host, and 7200 TTL
-                                    RFC_index.add_sort(rfc, rfc_record.title, HOST, 7200)
+                                    RFC_index.add_sort(rfc, rfc_record.title, HOST, isLocal=True )
+
+                                    client_pipe.send(RFC_index)
 
                             # RFC NOT found in newly merged RFC Index - move onto to next peer
                             else:
@@ -217,7 +219,7 @@ def main_menu():
         elif command == "KeepAlive":
 
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.connect(('127.0.0.1', RS_PORT))
+            sock.connect((RS_HOST, RS_PORT))
 
             request = ProtocolTranslator.keepAliveQueryToProtocol(cookie)
             sock.send(request.encode('ascii'))
@@ -231,7 +233,7 @@ def main_menu():
         elif command == "Leave":
 
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.connect(('127.0.0.1', RS_PORT))
+            sock.connect((RS_HOST, RS_PORT))
 
             request = ProtocolTranslator.leaveQueryToProtocol(cookie)
             sock.send(request.encode('ascii'))
@@ -249,6 +251,9 @@ def main_menu():
     sys.exit(0)
 
 
+# Hostname for RS
+RS_HOST = ''
+
 # Localhost address for client
 HOST = PeerUtils.getIPAddress()
 
@@ -257,6 +262,17 @@ RS_PORT = 65243
 
 # RFC Index for this client
 RFC_index = LinkedList()
+
+success, msg = PeerUtils.getRSHostname(sys.argv)
+
+if success:
+    RS_HOST = msg
+    print(msg)
+else:
+    print(msg)
+    sys.exit(1)
+
+
 
 # Adds its RFCs to the RFC index\
 PeerUtils.createRFCIndex(RFC_index, HOST)
