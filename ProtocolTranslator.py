@@ -114,11 +114,12 @@ def pqueryResponseToElements( response ):
             hostname = lines[current_idx].split(':')[1]
             cookie = int(lines[current_idx+1].split(':')[1])
             port = int(lines[current_idx+2].split(':')[1])
+            ttl = float(lines[current_idx+3].split(':')[1])
             is_active = str_to_bool(lines[current_idx+4].split(':')[1])
             last_reg = float(lines[current_idx+5].split(':')[1])
             times_active = int(lines[current_idx+6].split(':')[1])
             
-            record = PeerRecord(hostname, cookie, port, times_active, is_active, last_reg )
+            record = PeerRecord(hostname, cookie, port, times_active, is_active, last_reg , ttl)
             p_list.peer_list = numpy.append( p_list.peer_list, [record])
             peer_idx += 1
             current_idx += 8
