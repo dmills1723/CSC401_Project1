@@ -16,14 +16,14 @@ class PeerRecord:
         @param cookie (integer) Unique ID for this peer.
         @param port (integer) port this peer's RFC server listens on
     '''
-    def __init__( self, hostname, cookie, port, time_active = 0, is_active = False, last_reg_time = 0 ) :
+    def __init__( self, hostname, cookie, port, time_active = 0, is_active = False, last_reg_time = 0, ttl=0) :
         self.hostname = hostname
         self.cookie = cookie
         self.port = port
         self.timesActive = time_active
         self.isActive = is_active
         self.lastRegistrationTime = last_reg_time
-        self.ttl = 0
+        self.ttl = ttl 
         if is_active is False and time_active == 0 and last_reg_time == 0:
             self.register()
         
