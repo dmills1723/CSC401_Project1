@@ -47,7 +47,6 @@ class Node:
         str_rfc = "RFC:" + str(self.rfc_num) + "\n"
         str_rfc += "Title:" + self.title + "\n"
         str_rfc += "Hostname:" + self.hostname + "\n"
-        str_rfc += "TTL:" + str(self.ttl) + "\n"
         return str_rfc
 
 
@@ -70,8 +69,10 @@ class LinkedList:
         current = self.head
 
         while current is not None:
+            print( "infin loop" )
             count = count + 1
-            current = current.get_next()
+            #current = current.get_next()
+            current = current.next
 
         return count
 
@@ -185,6 +186,7 @@ class LinkedList:
             if current.isLocal :
                 current.reset_ttl()
                 current.isLocal = False
+                current = current.next
             elif ( current.ttl < current_time ) :
                 temp = current
                 current = current.next
