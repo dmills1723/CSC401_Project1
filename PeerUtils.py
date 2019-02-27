@@ -18,40 +18,40 @@ def createRFCIndex(rfc_index, hostname):
     else:
         path = "RFCs/"
         for filename in os.listdir(path):
-            filepath = os.path.join(path, filename)
+            if filename.startswith("rfc"):
+                filepath = os.path.join(path, filename)
+                rfc_num = int(filename[3:7])
+                file = open(filepath, "r")
+                lines = file.readlines()
 
-            rfc_num = int(filename[3:7])
-            file = open(filepath, "r")
-            lines = file.readlines()
+                idx = 0
+                length = len(lines)
+                while idx < length:
+                    if "Abstract" in lines[idx]:
+                        break
+                    idx += 1
+                idx = idx - 1
+                title = ''
+                title_found = False
+                title_complete = False
+                while not title_found or not title_complete:
+                    if not title_found and lines[idx] == '\n':
+                        idx = idx - 1
+                    elif not title_found and lines[idx] != '\n':
+                        title_found = True
+                        title += lines[idx].strip()
+                        idx = idx - 1
+                    elif not title_complete and lines[idx] != '\n':
+                        temp = title
+                        title = lines[idx].strip()
+                        title = title + ' ' + temp
+                        idx = idx - 1
+                    elif not title_complete and lines[idx] == '\n':
+                        title_complete = True
 
-            idx = 0
-            length = len(lines)
-            while idx < length:
-                if "Abstract" in lines[idx]:
-                    break
-                idx += 1
-            idx = idx - 1
-            title = ''
-            title_found = False
-            title_complete = False
-            while not title_found or not title_complete:
-                if not title_found and lines[idx] == '\n':
-                    idx = idx - 1
-                elif not title_found and lines[idx] != '\n':
-                    title_found = True
-                    title += lines[idx].strip()
-                    idx = idx - 1
-                elif not title_complete and lines[idx] != '\n':
-                    temp = title
-                    title = lines[idx].strip()
-                    title = title + ' ' + temp
-                    idx = idx - 1
-                elif not title_complete and lines[idx] == '\n':
-                    title_complete = True
+                file.close()
 
-            file.close()
-
-            rfc_index.add_sort( rfc_num, title, hostname, isLocal = True )
+                rfc_index.add_sort( rfc_num, title, hostname, isLocal = True )
 
 """
 Writes the RFC file this Peer Client received from another Peer Server
