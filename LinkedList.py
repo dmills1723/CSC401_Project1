@@ -47,6 +47,7 @@ class Node:
         str_rfc = "RFC:" + str(self.rfc_num) + "\n"
         str_rfc += "Title:" + self.title + "\n"
         str_rfc += "Hostname:" + self.hostname + "\n"
+        str_rfc += "TTL:" + str(self.ttl) + "\n"
         return str_rfc
 
 
@@ -60,7 +61,6 @@ class LinkedList:
         node = self.head
 
         while node:
-            print(node.rfc_num)
             node = node.next
 
     # Size of linked list
@@ -69,9 +69,7 @@ class LinkedList:
         current = self.head
 
         while current is not None:
-            print( "infin loop" )
             count = count + 1
-            #current = current.get_next()
             current = current.next
 
         return count
