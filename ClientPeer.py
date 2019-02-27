@@ -45,16 +45,19 @@ def main_menu():
     cookie = -1
     while True:
         command = input('(1) Register, (2) DownloadRFC, (3) KeepAlive, (4) Leave:\n')
+        print('')
         if command == "Register":
 
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.connect((RS_HOST , RS_PORT))
 
             request = ProtocolTranslator.registerQueryToProtocol(HOST, rfc_server_port, cookie)
+            print(request)
             sock.send(request.encode('ascii'))
 
             response_bytes = sock.recv(2048)
             response = str(response_bytes.decode('ascii'))
+            print(response)
 
             cookie = ProtocolTranslator.registerResponseToElements(response)
             sock.close()
@@ -73,6 +76,7 @@ def main_menu():
             sock.connect((RS_HOST , RS_PORT))
 
             request = ProtocolTranslator.pqueryQueryToProtocol(cookie)
+            print(request)
 
             sock.send(request.encode('ascii'))
             response = ''
@@ -84,11 +88,16 @@ def main_menu():
                 if response[-4:] == "END\n":
                     break
 
-            success, p_list = ProtocolTranslator.pqueryResponseToElements(response)
+            print(response)
+
+            list_success, p_list = ProtocolTranslator.pqueryResponseToElements(response)
 
             global Peer_List
-            if success:
+            if list_success:
                 Peer_List = p_list
+            #else:
+                #print("Error with receiving PeerList from RS")
+                #continue
 
             global rfc
             rfc = 0
@@ -128,17 +137,23 @@ def main_menu():
                     found = False
                     for peer in np.flip(Peer_List.peer_list):
                         if record.hostname == peer.hostname:
-                            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                            sock.connect((peer.hostname, peer.port))
+                            try:
+                                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                                sock.connect((peer.hostname, peer.port))
+                            except:
+                                sock.close()
+                                continue
 
-                            request = ProtocolTranslator.getRfcQueryToProtocol(rfc)
-                            sock.send(request.encode('ascii'))
+                                request = ProtocolTranslator.getRfcQueryToProtocol(rfc)
+                                print(request)
+                                sock.send(request.encode('ascii'))
 
-                            response_bytes = sock.recv(2048)
-                            response = str(response_bytes.decode('ascii'))
+                                response_bytes = sock.recv(2048)
+                                print(response)
+                                response = str(response_bytes.decode('ascii'))
 
-                            found, rfc_file = ProtocolTranslator.getRfcResponseToElements(response)
-                            sock.close()
+                                found, rfc_file = ProtocolTranslator.getRfcResponseToElements(response)
+                                sock.close()
 
                     # Peer with RFC document is found
                     if found is True:
@@ -152,20 +167,23 @@ def main_menu():
             # RFC Indexes to find RFC document)
             elif record is None and Peer_List:
                 flag = 0
-                print(Peer_List)
+
                 # Contact all peers in Peer List until RFC document identified in merged RFC Index
                 for peer in np.flip(Peer_List.peer_list):
 
                     if peer.isActive:
-                        #TODO: need exception for handling when a Peer on the PeerList is no longer connected
-                        #Could have disconnected by TTL has not expired yet
-                        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                        sock.connect((peer.hostname, peer.port))
+                        try:
+                            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                            sock.connect((peer.hostname, peer.port))
+                        except:
+                            sock.close()
+                            continue
                         request = ProtocolTranslator.rfcqueryQueryToProtocol(peer.hostname)
-
+                        print(request)
                         sock.send(request.encode('ascii'))
                         response_bytes = sock.recv(2048)
                         response = str(response_bytes.decode('ascii'))
+                        print(response)
 
                         b, rfc_idx = ProtocolTranslator.rfcQueryResponseToElements(response)
 
@@ -184,10 +202,12 @@ def main_menu():
                                 sock.connect((rfc_record.hostname, peer.port))
 
                                 request = ProtocolTranslator.getRfcQueryToProtocol(rfc)
+                                print(request)
                                 sock.send(request.encode('ascii'))
 
                                 response_bytes = sock.recv(2048)
                                 response = str(response_bytes.decode('ascii'))
+                                print(response)
 
                                 found, rfc_file = ProtocolTranslator.getRfcResponseToElements(response)
                                 PeerUtils.writeRFCFile(rfc_file, rfc)
@@ -225,10 +245,12 @@ def main_menu():
             sock.connect((RS_HOST, RS_PORT))
 
             request = ProtocolTranslator.keepAliveQueryToProtocol(cookie)
+            print(request)
             sock.send(request.encode('ascii'))
 
             response_bytes = sock.recv(2048)
             response = str(response_bytes.decode('ascii'))
+            print(response)
             ProtocolTranslator.keepAliveResponseToElements(response)
 
             sock.close()
@@ -239,16 +261,20 @@ def main_menu():
             sock.connect((RS_HOST, RS_PORT))
 
             request = ProtocolTranslator.leaveQueryToProtocol(cookie)
+            print(request)
             sock.send(request.encode('ascii'))
 
             response_bytes = sock.recv(2048)
             response = str(response_bytes.decode('ascii'))
+            print(response)
             ProtocolTranslator.leaveResponseToElements(response)
 
             sock.close()
 
         elif command == "Exit":
             break
+        else:
+            print("Invalid Command\n")
 
     print("Successfully exited program\n")
     sys.exit(0)
@@ -270,7 +296,6 @@ success, msg = PeerUtils.getRSHostname(sys.argv)
 
 if success:
     RS_HOST = msg
-    print(msg)
 else:
     print(msg)
     sys.exit(1)
