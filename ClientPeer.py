@@ -260,7 +260,6 @@ RFC_index = LinkedList()
 
 # Adds its RFCs to the RFC index\
 PeerUtils.createRFCIndex(RFC_index, HOST)
-# RFC_index.add_sort(8540, 'Stream Control Transmission Protocol: Errata and Issues in RFC 4960', '127.0.0.1', 7200)
 
 # RFC requested
 rfc = 0
