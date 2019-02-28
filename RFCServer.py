@@ -71,14 +71,11 @@ class PeerThread(threading.Thread):
             nonEmptyIndex = (self.rfc_index.size() > 0)
 
             print( self.rfc_index )
-            print( "made it here 0" )
             # Updates locally stored RFCs TTLs to 7200 plus current time.
             self.rfc_index.update_ttls_for_rfcquery()
 
-            print( "made it here A" )
             # sends back a response message with the cookie
             response = PT.rfcQueryResponseToProtocol(nonEmptyIndex, str( self.rfc_index ))
-            print( "made it here B" )
 
             # Releases mutex lock on the RFC index.
             self.index_lock.release()
@@ -100,11 +97,9 @@ class PeerThread(threading.Thread):
         # translates the response protocol into bytes
         response_bytes = response.encode('ascii')
 
-        print( "made it here 1" )
         # sends the response to the peer client
         self.socket.send(response_bytes)
 
-        print( "made it here 2" )
 
         # Closes the socket connection with the peer.
         self.socket.close()
@@ -180,7 +175,6 @@ class RFCServer():
     '''
     def run(self):
         worker_threads = []
-        print( "RFCServer port: %d" %self.serv_port )
 
         self.rfc_index_lock = threading.Lock()
 
