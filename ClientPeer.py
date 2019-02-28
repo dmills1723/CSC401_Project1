@@ -60,7 +60,6 @@ def main_menu():
             sock.connect((RS_HOST , RS_PORT))
 
             request = ProtocolTranslator.registerQueryToProtocol(HOST, rfc_server_port, cookie)
-            print(request)
             sock.sendall(request.encode('ascii'))
 
             response_bytes = sock.recv(2048)
@@ -85,7 +84,6 @@ def main_menu():
             sock.connect((RS_HOST, RS_PORT))
 
             request = ProtocolTranslator.pqueryQueryToProtocol(cookie)
-            print(request)
 
             sock.sendall(request.encode('ascii'))
             response = ''
@@ -104,9 +102,6 @@ def main_menu():
             global Peer_List
             Peer_List = p_list
 
-            print("-----------------------------------------------------------")
-            print("ClientPeer peer_list: \n%s" % Peer_List)
-
         elif command == "RFCQuery":
 
             # Check if unregistered client
@@ -119,7 +114,8 @@ def main_menu():
                 continue
 
             # Contact all peers in Peer List until RFC document identified in merged RFC Index
-            for peer in np.flip(Peer_List.peer_list):
+            #for peer in np.flip(Peer_List.peer_list):
+            for peer in Peer_List.peer_list :
 
                 if peer.isActive:
                     try:
@@ -129,7 +125,6 @@ def main_menu():
                         sock.close()
                         continue
                     request = ProtocolTranslator.rfcqueryQueryToProtocol(peer.hostname)
-                    print(request)
                     sock.sendall(request.encode('ascii'))
 
                     response = ''
@@ -154,9 +149,6 @@ def main_menu():
                         RFC_index = LinkedList(RFC_index_head)
                         RFC_index.remove_duplicates()
                         client_pipe.send(RFC_index)
-                        print("-----------------------------------------------------------")
-                        print("ClientPeer RFC Index:\n")
-                        print(RFC_index)
 
         elif command == "DownloadRFC":
 
@@ -172,7 +164,6 @@ def main_menu():
             sock.connect((RS_HOST , RS_PORT))
 
             request = ProtocolTranslator.pqueryQueryToProtocol(cookie)
-            print(request)
 
             sock.sendall(request.encode('ascii'))
             response = ''
@@ -190,9 +181,6 @@ def main_menu():
 
             Peer_List = p_list
 
-            print("-----------------------------------------------------------")
-            print("ClientPeer peer_list: \n%s" %Peer_List)
-
             global rfc
             rfc = 0
 
@@ -206,6 +194,7 @@ def main_menu():
                 else:
                     break
 
+            RFC_index.remove_duplicates()
             # Search RFC Index for RFC
             record = RFC_index.search(rfc)
 
@@ -228,36 +217,38 @@ def main_menu():
                 # (RFC document found in RFC Index, used hostname and Peer List to contact peer)
                 else:
                     found = False
-                    for peer in np.flip(Peer_List.peer_list):
+                    #for peer in np.flip(Peer_List.peer_list):
+                    for peer in Peer_List.peer_list:
                         if record.hostname == peer.hostname and peer.isActive:
-                            try:
-                                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                                sock.connect((peer.hostname, peer.port))
-                            except:
+
+                            rfc_path = os.path.join(os.path.curdir, "RFCs", "rfc%s.txt" % rfc)
+                            hasLocalFile = os.path.isfile(rfc_path)
+                            if not hasLocalFile :
+                                try:
+                                    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                                    sock.connect((peer.hostname, peer.port))
+                                except:
+                                    sock.close()
+                                    continue
+
+                                request = ProtocolTranslator.getRfcQueryToProtocol(rfc)
+                                sock.sendall(request.encode('ascii'))
+
+                                response = ''
+                                while True:
+                                    response_bytes = sock.recv(2048)
+                                    response += str(response_bytes.decode('ascii'))
+
+                                    if response[-4:] == "END\n":
+                                        break
+
+                                print(response)
+
+                                found, rfc_file = ProtocolTranslator.getRfcResponseToElements(response)
+                                PeerUtils.writeRFCFile(rfc_file, rfc)
+                                print(time.time(), file=sys.stderr)
+
                                 sock.close()
-                                continue
-
-                            request = ProtocolTranslator.getRfcQueryToProtocol(rfc)
-                            print(request)
-                            sock.sendall(request.encode('ascii'))
-
-                            response = ''
-                            while True:
-                                response_bytes = sock.recv(2048)
-                                response += str(response_bytes.decode('ascii'))
-
-                                if response[-4:] == "END\n":
-                                    break
-
-                            print(response)
-
-                            found, rfc_file = ProtocolTranslator.getRfcResponseToElements(response)
-                            PeerUtils.writeRFCFile(rfc_file, rfc)
-                            print(time.time(), file=sys.stderr)
-
-
-                            print( rfc_file )
-                            sock.close()
 
                     # Peer with RFC document is found
                     if found is True:
@@ -273,7 +264,8 @@ def main_menu():
                 flag = 0
 
                 # Contact all peers in Peer List until RFC document identified in merged RFC Index
-                for peer in np.flip(Peer_List.peer_list):
+                #for peer in np.flip(Peer_List.peer_list):
+                for peer in Peer_List.peer_list :
 
                     if peer.isActive:
                         try:
@@ -283,7 +275,6 @@ def main_menu():
                             sock.close()
                             continue
                         request = ProtocolTranslator.rfcqueryQueryToProtocol(peer.hostname)
-                        print(request)
                         sock.sendall(request.encode('ascii'))
 
                         response = ''
@@ -296,12 +287,8 @@ def main_menu():
                                 break
 
                         print(response)
-                        #response_bytes = sock.recv(2048)
-                        #response = str(response_bytes.decode('ascii'))
-                        #print(response)
 
                         b, rfc_idx = ProtocolTranslator.rfcQueryResponseToElements(response)
-
                         sock.close()
 
                         # Peer has non-empty RFC Index
@@ -319,7 +306,6 @@ def main_menu():
                                 sock.connect((rfc_record.hostname, peer.port))
 
                                 request = ProtocolTranslator.getRfcQueryToProtocol(rfc)
-                                print(request)
                                 sock.sendall(request.encode('ascii'))
                                 response = ''
 
@@ -331,9 +317,6 @@ def main_menu():
                                         break
 
                                 print(response)
-                                #response_bytes = sock.recv(2048)
-                                #response = str(response_bytes.decode('ascii'))
-                                #print(response)
 
                                 found, rfc_file = ProtocolTranslator.getRfcResponseToElements(response)
                                 PeerUtils.writeRFCFile(rfc_file, rfc)
@@ -347,7 +330,7 @@ def main_menu():
                                     flag = 1
 
                                     # Add node to RFC Index with num/title of RFC found, local host, and 7200 TTL
-                                    RFC_index.add_sort(rfc, rfc_record.title, HOST, isLocal=True)
+                                    RFC_index.add_sort(rfc, rfc_record.title, HOST)
                                     client_pipe.send(RFC_index)
 
                             # RFC NOT found in newly merged RFC Index - move onto to next peer
@@ -378,7 +361,6 @@ def main_menu():
             sock.connect((RS_HOST, RS_PORT))
 
             request = ProtocolTranslator.keepAliveQueryToProtocol(cookie)
-            print(request)
             sock.sendall(request.encode('ascii'))
 
             response_bytes = sock.recv(2048)
@@ -403,7 +385,6 @@ def main_menu():
             sock.connect((RS_HOST, RS_PORT))
 
             request = ProtocolTranslator.leaveQueryToProtocol(cookie)
-            print(request)
             sock.sendall(request.encode('ascii'))
 
             response_bytes = sock.recv(2048)
@@ -444,8 +425,6 @@ if success:
 else:
     print(msg)
     sys.exit(1)
-
-
 
 # Adds its RFCs to the RFC index\
 PeerUtils.createRFCIndex(RFC_index, HOST)
