@@ -190,6 +190,8 @@ lock = threading.Lock()
 # using local for testing      
 host = PeerUtils.getIPAddress()
 
+print("Host: " + host )
+
 # port the RS server listens on
 port = 65243
 
