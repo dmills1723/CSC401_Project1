@@ -63,6 +63,27 @@ Use it to connect future peers to the server
 python3 ClientPeer.py '**.***.**.***'
 ```
   4) Repeat this step to add more peers to the community
+
+To generate the cumulative download time profile for Task 1:
+    0) Create 6 directories (or just 2 to see the process) and copy the project folder into each of these.
+
+    1) In 5 of these, delete all the files in the "RFCs" directory.
+
+    2) Start the RS process:
+
+python3 RegistrationServer.py
+
+    3a) In the project folder with nonempty "RFCs" directory:
+
+python3 <local_ip_address> ClientPeer.py
+
+    3b) Then:
+"Register"
+
+    4a) In the 5 folders with empty "RFCs" directories:
+python3 <local_ip_address> ClientPeer.py <input.txt 2> times.txt
+
+The files "times.txt" contain the Unix epoch time each RFC was downloaded and written locally. Note that running these in 'parallel' takes fast fingers. We had trouble starting 5 scripts in different directories simultaneously, both using python's "pexpect" library and BASH scripts, so it's a crude solution.
   
 ## Commands ##
 
