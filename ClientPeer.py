@@ -69,6 +69,7 @@ def main_menu():
 
             cookie = ProtocolTranslator.registerResponseToElements(response)
             sock.close()
+            time.sleep(3)
 
         elif command == "PQuery":
 
@@ -252,6 +253,8 @@ def main_menu():
 
                             found, rfc_file = ProtocolTranslator.getRfcResponseToElements(response)
                             PeerUtils.writeRFCFile(rfc_file, rfc)
+                            print(time.time(), file=sys.stderr)
+
 
                             print( rfc_file )
                             sock.close()
@@ -334,6 +337,8 @@ def main_menu():
 
                                 found, rfc_file = ProtocolTranslator.getRfcResponseToElements(response)
                                 PeerUtils.writeRFCFile(rfc_file, rfc)
+                                print(time.time(), file=sys.stderr)
+
                                 sock.close()
 
                                 # Peer contacted and RFC document received
