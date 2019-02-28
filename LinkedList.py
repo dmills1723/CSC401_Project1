@@ -181,13 +181,11 @@ class LinkedList:
         current = self.head
         current_time = time.time()
         while current :
-            print("here1")
             if current.isLocal :
                 current.reset_ttl()
                 current.isLocal = False
                 current = current.next
             elif ( current.ttl < current_time ) :
-                print("here2")
                 temp = current
                 current = current.next
                 self.remove_node( temp.rfc_num, temp.hostname)
