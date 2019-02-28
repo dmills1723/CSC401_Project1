@@ -53,14 +53,14 @@ To locally run this program:
 ```
 python3 RegistrationServer.py
 ```
-A hostname is printed on the next line --> 'Host: '**.***.**.***'
+A hostname is printed on the next line --> 'Host: * * . * * * . * * . * * *'
 Use it to connect future peers to the server
 
   2) Initialize a local set of RFC files within a directory labeled 'RFCs' (an empty directory with that name will automatically be created for every peer that is spawned)
 
   3) In order to add a single client (peer) to the system, open a terminal window input:
 ```
-python3 ClientPeer.py '**.***.**.***'
+python3 ClientPeer.py '* * . * * * . * * . * * *'
 ```
   4) Repeat this step to add more peers to the community
   
