@@ -35,8 +35,6 @@ class PeerThread(threading.Thread):
         try:
             # bytes sent from the peer
             request_bytes = self.socket.recv(2048)
-
-            print(request_bytes)
             
             # convert the request in bytes to string
             request = str( request_bytes.decode('ascii') )

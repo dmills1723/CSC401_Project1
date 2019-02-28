@@ -46,7 +46,9 @@ Returns the register response protocol string.
 """
 def registerResponseToProtocol( cookie ):
     message = "OK 200\n"
+    message += "DATA\n"
     message += "Cookie:" + str(cookie) + "\n"
+    message += "END\n"
     return message
 
 """
@@ -55,7 +57,7 @@ Returns the cookie from this response.
 """
 def registerResponseToElements( response ):
     lines = response.splitlines()
-    cookie = int(lines[1].split(':')[1])
+    cookie = int(lines[2].split(':')[1])
     return cookie
 
 """
@@ -167,6 +169,8 @@ def leaveResponseToProtocol( can_leave ):
         response += '200 OK\n'
     else:
         response += '400 BAD REQUEST\n'
+    response += "DATA:\n\n"
+    response += "END\n"
     return response
 
 """
@@ -210,6 +214,9 @@ def keepAliveResponseToProtocol( can_keep_alive ):
         response += '200 OK\n'
     else:
         response += '400 BAD REQUEST\n'
+    response += 'DATA:\n'
+    response += '\n'
+    response += 'END\n'
     return response
     
 """
@@ -322,6 +329,6 @@ def getRfcResponseToElements( response ):
 def genericBadRequestResponseToProtocol() :
         response = ''
         response += '400 BAD REQUEST\n'
-        response += "Data:\n"
+        response += "Data:\n\n"
         response += "END\n"
         return response

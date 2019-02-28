@@ -113,6 +113,10 @@ def main_menu():
                 print("You must Register first!\n")
                 continue
 
+            if Peer_List is None or len(Peer_List.peer_list) == 0:
+                print("There are no active peers to query!\n")
+                continue
+
             # Contact all peers in Peer List until RFC document identified in merged RFC Index
             for peer in np.flip(Peer_List.peer_list):
 
