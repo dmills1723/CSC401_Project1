@@ -38,6 +38,8 @@ sends a Leave message to the RS and leaves the system; the RS updates A’s reco
 
 Install Python version 3.6 for this project
 
+Run this program on an Ubuntu 16.04 system
+
 Input this command into a terminal window to install the _numpy_ library:
 ```
 sudo apt-get install python3-numpy
@@ -51,7 +53,7 @@ To locally run this program:
 ```
 python3 RegistrationServer.py
 ```
-A hostname is printed on the next line --> 'Host: * * . * * * . * * . * * * '
+A hostname is printed on the next line --> 'Host: '**.***.**.***'
 Use it to connect future peers to the server
 
   2) Initialize a local set of RFC files within a directory labeled 'RFCs' (an empty directory with that name will automatically be created for every peer that is spawned)
@@ -109,7 +111,7 @@ Leave
 Exit
 ```
 
-**Note:** This program prints a request/response object for each message sent over the TCP socket connection for peer-to-server and peer-to-peer communication. This is to show successful or failed TCP requests.
+**Note:** This program prints communication crumbs for each response message sent over the TCP socket connection for both peer-to-server and peer-to-peer communication. This is to show successful or failed TCP requests.
 
 ## Authors ##
 
