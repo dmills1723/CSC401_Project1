@@ -19,9 +19,8 @@ The composition of parts within our P2P/DI system include:
   * RFC Client
 
 
-_A general example of message flows within our system:_
+_A general example of message flows within our system (from project guidelines pdf):_
 
-Figure 1 depicts the steps required for Peer A to register with the RS and download an RFC from Peer B.
 Before it joins the system, A first instantiates an RFC server process listening to any available local port.
 In Step 1, Peer A registers with the RS, provides the local port number for each RFC index, and receives a
 cookie (if this is not the first time that Peer A registers with the RS, then it provides the cookie it received
