@@ -1,6 +1,9 @@
 import time
 import math
 
+"""
+Represents a record in the RFC Index
+"""
 class Node:
     TTL_DEFAULT = 7200
     # Initial
@@ -50,7 +53,9 @@ class Node:
         str_rfc += "TTL:" + str(self.ttl) + "\n"
         return str_rfc
 
-
+"""
+Represents the RFC Index
+"""
 class LinkedList:
     # Initial
     def __init__(self, head=None):
@@ -190,6 +195,4 @@ class LinkedList:
                 current = current.next
                 self.remove_node( temp.rfc_num, temp.hostname)
             else:
-                #TODO: current is not either of the above cases, thus causing an infinite loop
-                # need to update the time for these based on how much time has passed?
                 current = current.next

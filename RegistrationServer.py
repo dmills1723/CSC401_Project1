@@ -48,13 +48,13 @@ class PeerThread(threading.Thread):
                 host, port, c = ProtocolTranslator.registerQueryToElements( request )
 
                 # acquire lock on the peer list before modifying
-                #lock.acquire()
+                lock.acquire()
                 
                 # registers this host in the peer list and obtains the cookie
                 cookie = peer_list.register( host, port, c )
 
                 # release lock on the peer list after modifying
-                #lock.release()
+                lock.release()
                 
                 # sends back a response message with the cookie
                 response = ProtocolTranslator.registerResponseToProtocol( cookie )
@@ -74,14 +74,14 @@ class PeerThread(threading.Thread):
                 cookie = ProtocolTranslator.leaveQueryToElements( request )
                 
                 # acquires lock on the peer list before modifying
-                #lock.acquire()
+                lock.acquire()
                 
                 # attempts to have the peer leave if there is matching peer in the peerlist with this cookie
                 # returns a boolean value of whether the peer successfully could leave
                 peer_left = peer_list.leave( cookie )
                 
                 # releases lock on the peer list after modifying
-                #lock.release()
+                lock.release()
                 
                 # creates the protocol response to be sent back to the peer
                 response = ProtocolTranslator.leaveResponseToProtocol( peer_left )
@@ -101,25 +101,17 @@ class PeerThread(threading.Thread):
                 cookie = ProtocolTranslator.pqueryQueryToElements( request )
                 
                 # acquires lock on the peer list before modifying
-                #lock.acquire()
+                lock.acquire()
                 
                 # attempts to find the matching peer in this peer list based on the cookie
                 # returns the peerlist of active peers or None if the peer hasn't registered yet
                 p_list, status = peer_list.pQuery( cookie )
                                 
                 # releases lock on the peer list after modifying
-                #lock.release()
-                
-                #can_query = False
+                lock.release()
+
                 p_list_str = ''
-                #if p_list is not None:
-                 #   can_query = True
-                 #   p_list = PeerList(p_list)
-                 #   p_list_str = str(p_list)
-
-
                 if status == 1:
-
                     p_list = PeerList(p_list)
                     p_list_str = str(p_list)
      
@@ -139,19 +131,18 @@ class PeerThread(threading.Thread):
                 cookie = ProtocolTranslator.keepAliveQueryToElements( request )
                 
                 # acquires lock on the peer list before modifying
-                #lock.acquire()
+                lock.acquire()
                 
                 # attempts to find the matching peer in this peer list based on the cookie
                 # returns the a status code value if this was successful
                 status_code = peer_list.keepAlive( cookie )
                 
                 # releases lock on the peer list after modifying
-                #lock.release()
+                lock.release()
                 
                 # sets boolean value of whether this peer could keepAlive to false
                 can_keep_alive = False
-                
-                # TODO: might need to handle request differently depending on which invalid code (0 or 3)
+
                 # if the keepAlive request was valid - set the boolean value to true
                 if status_code == 1:
                     can_keep_alive = True
@@ -182,7 +173,7 @@ class PeerThread(threading.Thread):
         
         # Exception occured (or timeout?) close tcp connection and return false                
         except:
-            #lock.release()
+            lock.release()
             self.socket.close()
             sys.exit()
             
@@ -194,7 +185,7 @@ class PeerThread(threading.Thread):
 peer_list = PeerList()
 
 # create a lock for the threads
-#lock = threading.Lock()
+lock = threading.Lock()
 
 # using local for testing      
 host = PeerUtils.getIPAddress()

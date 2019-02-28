@@ -8,7 +8,6 @@ import math
 '''
 class PeerRecord:
     TTL_DEFAULT = 7200
-    #TTL_DEFAULT = 5
 
     '''
         Creates a new PeerRecord.
@@ -63,8 +62,6 @@ class PeerRecord:
             #ttl = self.ttl - time.time()
             ttl = math.ceil( self.ttl - time.time() )
         '''
-
-        #lastRegistration_datetime = time.strftime( '%Y-%m-%d %H:%M:%S', time.localtime(self.lastRegistrationTime))
 
         return ("Hostname:%s\nCookie:%s\nPort:%s\nTTL:%f\nActive:%s\n"
                "LastRegistered:%f\nTimesActiveInMonth:%d\n"

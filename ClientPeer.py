@@ -8,7 +8,6 @@ import time
 import os
 import signal
 import socket
-import numpy as np
 
 
 '''
@@ -68,7 +67,6 @@ def main_menu():
 
             cookie = ProtocolTranslator.registerResponseToElements(response)
             sock.close()
-            time.sleep(3)
 
         elif command == "PQuery":
 
@@ -114,7 +112,6 @@ def main_menu():
                 continue
 
             # Contact all peers in Peer List until RFC document identified in merged RFC Index
-            #for peer in np.flip(Peer_List.peer_list):
             for peer in Peer_List.peer_list :
 
                 if peer.isActive:
@@ -217,7 +214,6 @@ def main_menu():
                 # (RFC document found in RFC Index, used hostname and Peer List to contact peer)
                 else:
                     found = False
-                    #for peer in np.flip(Peer_List.peer_list):
                     for peer in Peer_List.peer_list:
                         if record.hostname == peer.hostname and peer.isActive:
 
@@ -264,7 +260,6 @@ def main_menu():
                 flag = 0
 
                 # Contact all peers in Peer List until RFC document identified in merged RFC Index
-                #for peer in np.flip(Peer_List.peer_list):
                 for peer in Peer_List.peer_list :
 
                     if peer.isActive:
