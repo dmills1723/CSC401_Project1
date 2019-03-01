@@ -65,7 +65,7 @@ class PeerThread(threading.Thread):
                 response_bytes = response.encode('ascii')
                 
                 # sends the response to the peer client
-                self.socket.send( response_bytes )
+                self.socket.sendall( response_bytes )
                 
             # Peer sends the Leave request  
             elif method == "Leave":
@@ -92,7 +92,7 @@ class PeerThread(threading.Thread):
                 response_bytes = response.encode('ascii')
                 
                 # sends the response to the peer client
-                self.socket.send( response_bytes )
+                self.socket.sendall( response_bytes )
 
             # Peer sends the PQuery request
             elif method == "PQuery":
@@ -122,7 +122,7 @@ class PeerThread(threading.Thread):
                 # translates the response protocol into bytes
                 response_bytes = response.encode('ascii')
                 
-                self.socket.send( response_bytes )
+                self.socket.sendall( response_bytes )
                     
             # Peer sends the KeepAlive request
             elif method == "KeepAlive":
@@ -156,7 +156,7 @@ class PeerThread(threading.Thread):
                 response_bytes = response.encode('ascii')
                 
                 # sends the response to the peer client
-                self.socket.send( response_bytes )
+                self.socket.sendall( response_bytes )
                 
             # Invalid request
             else:
@@ -169,7 +169,7 @@ class PeerThread(threading.Thread):
                 response_bytes = response.encode('ascii')
                 
                 # sends the response to the peer client
-                self.socket.send( response_bytes )
+                self.socket.sendall( response_bytes )
         
         # Exception occured (or timeout?) close tcp connection and return false                
         except:
